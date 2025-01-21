@@ -6,7 +6,7 @@
     <title>عرض ملاحظات الطلاب</title>
     <link rel="stylesheet" href="styles.css">
     <script type="module">
-        // استيراد Firebase
+        // استيراد مكتبات Firebase الأساسية
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, query, orderBy, limit, startAfter, endBefore } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
@@ -21,40 +21,49 @@
             measurementId: "G-N63JWQNTZF"
         };
 
+        // تهيئة تطبيق Firebase
         const app = initializeApp(firebaseConfig);
+
+        // تهيئة Firestore
         const db = getFirestore(app);
 
-        // عناصر DOM
-        const notesContainer = document.getElementById("notesContainer");
-        const prevBtn = document.getElementById("prevBtn");
-        const nextBtn = document.getElementById("nextBtn");
+        // عناصر الصفحة
+        const notesContainer = document.getElementById("notesContainer"); // الحاوية لعرض الملاحظات
+        const prevBtn = document.getElementById("prevBtn"); // زر الصفحة السابقة
+        const nextBtn = document.getElementById("nextBtn"); // زر الصفحة التالية
 
-        // متغيرات التحكم في الصفحات
+        // إعدادات التصفح (Pagination)
         const pageSize = 5; // عدد الملاحظات لكل صفحة
-        let lastVisible = null;
-        let firstVisible = null;
+        let lastVisible = null; // آخر عنصر في الصفحة الحالية
+        let firstVisible = null; // أول عنصر في الصفحة الحالية
 
-        // تحميل الملاحظات
+        // الدالة لتحميل الملاحظات
         async function loadNotes(direction = null) {
-            notesContainer.innerHTML = "جارٍ التحميل...";
+            notesContainer.innerHTML = "جارٍ التحميل..."; // عرض رسالة أثناء جلب البيانات
 
             try {
                 let notesQuery;
+
+                // التصفح للأمام
                 if (direction === "next" && lastVisible) {
                     notesQuery = query(
-                        collection(db, "notes"),
-                        orderBy("timestamp", "desc"),
-                        startAfter(lastVisible),
-                        limit(pageSize)
+                        collection(db, "notes"), // استعلام على مجموعة "notes"
+                        orderBy("timestamp", "desc"), // ترتيب حسب الوقت (تنازلي)
+                        startAfter(lastVisible), // البدء من آخر عنصر في الصفحة الحالية
+                        limit(pageSize) // عدد الملاحظات لكل صفحة
                     );
-                } else if (direction === "prev" && firstVisible) {
+                }
+                // التصفح للخلف
+                else if (direction === "prev" && firstVisible) {
                     notesQuery = query(
                         collection(db, "notes"),
                         orderBy("timestamp", "desc"),
-                        endBefore(firstVisible),
+                        endBefore(firstVisible), // التوقف قبل أول عنصر في الصفحة الحالية
                         limit(pageSize)
                     );
-                } else {
+                }
+                // الصفحة الأولى
+                else {
                     notesQuery = query(
                         collection(db, "notes"),
                         orderBy("timestamp", "desc"),
@@ -62,40 +71,47 @@
                     );
                 }
 
+                // جلب البيانات
                 const querySnapshot = await getDocs(notesQuery);
 
+                // إذا لم تكن النتائج فارغة
                 if (!querySnapshot.empty) {
-                    // تحديث المؤشرات
-                    firstVisible = querySnapshot.docs[0];
-                    lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+                    // تحديث مؤشرات الصفحة
+                    firstVisible = querySnapshot.docs[0]; // أول عنصر في الصفحة
+                    lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1]; // آخر عنصر في الصفحة
 
                     notesContainer.innerHTML = ""; // تنظيف الحاوية
 
+                    // عرض كل ملاحظة
                     querySnapshot.forEach((doc) => {
-                        const note = doc.data();
-                        const noteItem = document.createElement("div");
-                        noteItem.classList.add("note-item");
+                        const note = doc.data(); // البيانات داخل الوثيقة
+                        const noteItem = document.createElement("div"); // إنشاء عنصر جديد لكل ملاحظة
+                        noteItem.classList.add("note-item"); // إضافة CSS class للتنسيق
                         noteItem.innerHTML = `
                             <div>
                                 <strong>${note.name}</strong> - ${note.grade}
                                 <p>${note.note}</p>
-                                ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
+                                ${note.image ? `<img src="${note.image}" alt="صورة">` : ""} <!-- عرض الصورة إذا وجدت -->
                             </div>
                         `;
-                        notesContainer.appendChild(noteItem);
+                        notesContainer.appendChild(noteItem); // إضافة الملاحظة إلى الحاوية
                     });
+
+                    // التحكم في حالة الأزرار
+                    prevBtn.disabled = !firstVisible; // تعطيل زر "الصفحة السابقة" إذا لم تكن هناك بيانات قبل الحالية
+                    nextBtn.disabled = !lastVisible; // تعطيل زر "الصفحة التالية" إذا لم تكن هناك بيانات بعد الحالية
                 } else {
-                    notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
+                    notesContainer.innerHTML = "لا توجد ملاحظات للعرض."; // إذا لم تكن هناك بيانات
                 }
             } catch (error) {
-                console.error("خطأ أثناء جلب الملاحظات:", error);
-                notesContainer.innerHTML = `حدث خطأ أثناء تحميل الملاحظات: ${error.message}`;
+                console.error("خطأ أثناء جلب الملاحظات:", error); // عرض الخطأ في Console
+                notesContainer.innerHTML = `حدث خطأ أثناء تحميل الملاحظات: ${error.message}`; // عرض رسالة خطأ للمستخدم
             }
         }
 
-        // التحكم في الأزرار
-        prevBtn.addEventListener("click", () => loadNotes("prev"));
-        nextBtn.addEventListener("click", () => loadNotes("next"));
+        // التحكم في أزرار التصفح
+        prevBtn.addEventListener("click", () => loadNotes("prev")); // تحميل الصفحة السابقة عند الضغط
+        nextBtn.addEventListener("click", () => loadNotes("next")); // تحميل الصفحة التالية عند الضغط
 
         // تحميل الصفحة الأولى عند فتح الصفحة
         window.onload = () => loadNotes();
@@ -104,11 +120,11 @@
 <body>
     <div class="container">
         <h1>ملاحظات الطلاب</h1>
-        <div id="notesContainer" class="notes-container"></div>
+        <div id="notesContainer" class="notes-container"></div> <!-- الحاوية التي ستعرض الملاحظات -->
 
         <div class="pagination">
-            <button id="prevBtn" disabled>الصفحة السابقة</button>
-            <button id="nextBtn" disabled>الصفحة التالية</button>
+            <button id="prevBtn" disabled>الصفحة السابقة</button> <!-- زر الصفحة السابقة -->
+            <button id="nextBtn" disabled>الصفحة التالية</button> <!-- زر الصفحة التالية -->
         </div>
     </div>
 </body>
