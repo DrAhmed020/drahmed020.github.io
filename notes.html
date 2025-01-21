@@ -38,51 +38,58 @@
         async function loadNotes(direction = null) {
             notesContainer.innerHTML = "جارٍ التحميل...";
 
-            let notesQuery;
-            if (direction === "next" && lastVisible) {
-                notesQuery = query(
-                    collection(db, "notes"),
-                    orderBy("timestamp", "desc"),
-                    startAfter(lastVisible),
-                    limit(pageSize)
-                );
-            } else if (direction === "prev" && firstVisible) {
-                notesQuery = query(
-                    collection(db, "notes"),
-                    orderBy("timestamp", "desc"),
-                    endBefore(firstVisible),
-                    limit(pageSize)
-                );
-            } else {
-                notesQuery = query(
-                    collection(db, "notes"),
-                    orderBy("timestamp", "desc"),
-                    limit(pageSize)
-                );
-            }
+            try {
+                let notesQuery;
+                if (direction === "next" && lastVisible) {
+                    notesQuery = query(
+                        collection(db, "notes"),
+                        orderBy("timestamp", "desc"),
+                        startAfter(lastVisible),
+                        limit(pageSize)
+                    );
+                } else if (direction === "prev" && firstVisible) {
+                    notesQuery = query(
+                        collection(db, "notes"),
+                        orderBy("timestamp", "desc"),
+                        endBefore(firstVisible),
+                        limit(pageSize)
+                    );
+                } else {
+                    notesQuery = query(
+                        collection(db, "notes"),
+                        orderBy("timestamp", "desc"),
+                        limit(pageSize)
+                    );
+                }
 
-            const querySnapshot = await getDocs(notesQuery);
-            if (!querySnapshot.empty) {
-                firstVisible = querySnapshot.docs[0];
-                lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+                const querySnapshot = await getDocs(notesQuery);
 
-                notesContainer.innerHTML = ""; // تنظيف الحاوية
+                if (!querySnapshot.empty) {
+                    // تحديث المؤشرات
+                    firstVisible = querySnapshot.docs[0];
+                    lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
 
-                querySnapshot.forEach((doc) => {
-                    const note = doc.data();
-                    const noteItem = document.createElement("div");
-                    noteItem.classList.add("note-item");
-                    noteItem.innerHTML = `
-                        <div>
-                            <strong>${note.name}</strong> - ${note.grade}
-                            <p>${note.note}</p>
-                            ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
-                        </div>
-                    `;
-                    notesContainer.appendChild(noteItem);
-                });
-            } else {
-                notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
+                    notesContainer.innerHTML = ""; // تنظيف الحاوية
+
+                    querySnapshot.forEach((doc) => {
+                        const note = doc.data();
+                        const noteItem = document.createElement("div");
+                        noteItem.classList.add("note-item");
+                        noteItem.innerHTML = `
+                            <div>
+                                <strong>${note.name}</strong> - ${note.grade}
+                                <p>${note.note}</p>
+                                ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
+                            </div>
+                        `;
+                        notesContainer.appendChild(noteItem);
+                    });
+                } else {
+                    notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
+                }
+            } catch (error) {
+                console.error("خطأ أثناء جلب الملاحظات:", error);
+                notesContainer.innerHTML = `حدث خطأ أثناء تحميل الملاحظات: ${error.message}`;
             }
         }
 
@@ -100,8 +107,8 @@
         <div id="notesContainer" class="notes-container"></div>
 
         <div class="pagination">
-            <button id="prevBtn">الصفحة السابقة</button>
-            <button id="nextBtn">الصفحة التالية</button>
+            <button id="prevBtn" disabled>الصفحة السابقة</button>
+            <button id="nextBtn" disabled>الصفحة التالية</button>
         </div>
     </div>
 </body>
