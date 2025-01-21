@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // إعداد Firebase
         const firebaseConfig = {
@@ -23,9 +23,69 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // دالة لإضافة ملاحظة جديدة
+        async function addNoteToFirestore(name, grade, note, imageURL) {
+            try {
+                await addDoc(collection(db, "notes"), {
+                    name,
+                    grade,
+                    note,
+                    image: imageURL || null,
+                    timestamp: Date.now()
+                });
+                alert("تمت إضافة الملاحظة بنجاح!");
+                loadNotes(); // تحديث الملاحظات بعد الإضافة
+            } catch (error) {
+                console.error("خطأ أثناء الإضافة:", error);
+                alert("حدث خطأ أثناء إضافة الملاحظة.");
+            }
+        }
+
+        // دالة لحذف ملاحظة
+        async function deleteNote(id) {
+            if (confirm("هل أنت متأكد من حذف هذه الملاحظة؟")) {
+                try {
+                    await deleteDoc(doc(db, "notes", id));
+                    alert("تم حذف الملاحظة بنجاح!");
+                    loadNotes(); // تحديث الملاحظات بعد الحذف
+                } catch (error) {
+                    console.error("خطأ أثناء الحذف:", error);
+                    alert("حدث خطأ أثناء حذف الملاحظة.");
+                }
+            }
+        }
+
+        // دالة لعرض الملاحظات
+        async function loadNotes() {
+            const notesContainer = document.getElementById("notesContainer");
+            notesContainer.innerHTML = "جارٍ التحميل...";
+            try {
+                const querySnapshot = await getDocs(collection(db, "notes"));
+                notesContainer.innerHTML = ""; // تنظيف الحاوية
+
+                querySnapshot.forEach((doc) => {
+                    const note = doc.data();
+                    const noteItem = document.createElement("div");
+                    noteItem.classList.add("note-item");
+                    noteItem.innerHTML = `
+                        <div>
+                            <strong>${note.name}</strong> - ${note.grade}
+                            <p>${note.note}</p>
+                            ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
+                            <button onclick="deleteNote('${doc.id}')">حذف</button>
+                        </div>
+                    `;
+                    notesContainer.appendChild(noteItem);
+                });
+            } catch (error) {
+                console.error("خطأ أثناء تحميل الملاحظات:", error);
+                notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
+            }
+        }
+
         // التعامل مع إرسال النموذج
         document.getElementById("noteForm").addEventListener("submit", async (e) => {
-            e.preventDefault(); // منع الإرسال الافتراضي
+            e.preventDefault();
 
             const name = document.getElementById("name").value;
             const grade = document.getElementById("grade").value;
@@ -39,43 +99,19 @@
 
                 reader.onload = async (e) => {
                     imageURL = e.target.result;
-
-                    // إضافة الملاحظة إلى Firestore
-                    try {
-                        await addDoc(collection(db, "notes"), {
-                            name,
-                            grade,
-                            note,
-                            image: imageURL,
-                            timestamp: Date.now() // إضافة timestamp
-                        });
-                        alert("تمت إضافة الملاحظة بنجاح!");
-                        document.getElementById("noteForm").reset();
-                    } catch (error) {
-                        console.error("خطأ أثناء الإضافة:", error);
-                        alert("حدث خطأ أثناء إضافة الملاحظة.");
-                    }
+                    await addNoteToFirestore(name, grade, note, imageURL);
+                    document.getElementById("noteForm").reset();
                 };
 
                 reader.readAsDataURL(file);
             } else {
-                // إذا لم تكن هناك صورة
-                try {
-                    await addDoc(collection(db, "notes"), {
-                        name,
-                        grade,
-                        note,
-                        image: null,
-                        timestamp: Date.now() // إضافة timestamp
-                    });
-                    alert("تمت إضافة الملاحظة بنجاح!");
-                    document.getElementById("noteForm").reset();
-                } catch (error) {
-                    console.error("خطأ أثناء الإضافة:", error);
-                    alert("حدث خطأ أثناء إضافة الملاحظة.");
-                }
+                await addNoteToFirestore(name, grade, note, imageURL);
+                document.getElementById("noteForm").reset();
             }
         });
+
+        // تحميل الملاحظات عند فتح الصفحة
+        window.onload = loadNotes;
     </script>
 </head>
 <body>
@@ -88,6 +124,7 @@
             <input type="file" id="image" accept="image/*">
             <button type="submit">إضافة الملاحظة</button>
         </form>
+        <div id="notesContainer" class="notes-container"></div>
     </div>
 </body>
 </html>
