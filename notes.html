@@ -27,10 +27,14 @@
         const prevBtn = document.getElementById("prevBtn");
         const nextBtn = document.getElementById("nextBtn");
 
-        const pageSize = 5;
+        const pageSize = 5; // عدد الملاحظات في كل صفحة
         let lastVisible = null;
         let firstVisible = null;
 
+        // ألوان مميزة لكل ملاحظة
+        const colors = ["#FFEB3B", "#FFCDD2", "#C8E6C9", "#BBDEFB", "#D1C4E9", "#FFE0B2", "#F8BBD0", "#B3E5FC"];
+
+        // دالة لجلب الملاحظات
         async function loadNotes(direction = null) {
             notesContainer.innerHTML = "جارٍ التحميل...";
 
@@ -65,39 +69,108 @@
                     lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
                     notesContainer.innerHTML = "";
 
-                    querySnapshot.forEach((doc) => {
+                    querySnapshot.forEach((doc, index) => {
                         const note = doc.data();
                         const noteItem = document.createElement("div");
                         noteItem.classList.add("note-item");
+
+                        // تعيين لون مختلف لكل ملاحظة
+                        const randomColor = colors[index % colors.length];
+                        noteItem.style.backgroundColor = randomColor;
+
                         noteItem.innerHTML = `
                             <div>
                                 <strong>${note.name}</strong> - ${note.grade}
                                 <p>${note.note}</p>
-                                ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
+                                ${note.image ? `<img src="${note.image}" alt="صورة" style="max-width: 100%; border-radius: 5px;">` : ""}
                             </div>
                         `;
                         notesContainer.appendChild(noteItem);
                     });
+
+                    // التحكم في حالة الأزرار
+                    prevBtn.disabled = !firstVisible;
+                    nextBtn.disabled = querySnapshot.size < pageSize;
                 } else {
                     notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
                 }
             } catch (error) {
                 console.error("خطأ أثناء جلب الملاحظات:", error);
-                notesContainer.innerHTML = `حدث خطأ أثناء تحميل الملاحظات: ${error.message}`;
+                notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
             }
         }
 
+        // التعامل مع أزرار الصفحة
         prevBtn.addEventListener("click", () => loadNotes("prev"));
         nextBtn.addEventListener("click", () => loadNotes("next"));
 
+        // تحميل الصفحة الأولى عند فتح الصفحة
         window.onload = () => loadNotes();
     </script>
+    <style>
+        /* تحسين تنسيق الأزرار */
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        .note-item {
+            margin: 10px;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .back-button {
+            display: flex;
+            justify-content: center;
+            margin: 20px;
+        }
+
+        .back-button a {
+            text-decoration: none;
+        }
+
+        .back-button button {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1>ملاحظات الطلاب</h1>
+        <h1>عرض ملاحظات الطلاب</h1>
+
+        <!-- زر الرجوع إلى صفحة الإضافة -->
+        <div class="back-button">
+            <a href="index.html">
+                <button>
+                    <img src="https://img.icons8.com/ios-filled/20/ffffff/plus-math.png" alt="إضافة" />
+                    إضافة ملاحظة
+                </button>
+            </a>
+        </div>
+
+        <!-- عرض الملاحظات -->
         <div id="notesContainer" class="notes-container"></div>
 
+        <!-- أزرار التنقل بين الصفحات -->
         <div class="pagination">
             <button id="prevBtn" disabled>الصفحة السابقة</button>
             <button id="nextBtn" disabled>الصفحة التالية</button>
