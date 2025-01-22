@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // إعداد Firebase
         const firebaseConfig = {
@@ -23,45 +23,42 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // تعريف دالة الحذف في النطاق العام
-        window.deleteNote = async function (id) {
-            if (confirm("هل أنت متأكد من حذف هذه الملاحظة؟")) {
-                try {
-                    await deleteDoc(doc(db, "notes", id));
-                    alert("تم حذف الملاحظة بنجاح!");
-                    loadNotes(); // تحديث الملاحظات بعد الحذف
-                } catch (error) {
-                    console.error("خطأ أثناء الحذف:", error);
-                    alert("حدث خطأ أثناء حذف الملاحظة.");
-                }
-            }
-        };
+        // تحميل أحدث ملاحظة
+        async function loadLatestNote() {
+            const latestNoteContainer = document.getElementById("latestNoteContainer");
+            latestNoteContainer.innerHTML = "جارٍ تحميل أحدث ملاحظة...";
 
-        // دالة لتحميل الملاحظات
-        async function loadNotes() {
-            const notesContainer = document.getElementById("notesContainer");
-            notesContainer.innerHTML = "جارٍ التحميل...";
             try {
-                const querySnapshot = await getDocs(collection(db, "notes"));
-                notesContainer.innerHTML = ""; // تنظيف الحاوية
+                const latestNoteQuery = query(
+                    collection(db, "notes"),
+                    orderBy("timestamp", "desc"),
+                    limit(1)
+                );
+                const latestNoteSnapshot = await getDocs(latestNoteQuery);
 
-                querySnapshot.forEach((doc) => {
-                    const note = doc.data();
-                    const noteItem = document.createElement("div");
-                    noteItem.classList.add("note-item");
-                    noteItem.innerHTML = `
-                        <div>
-                            <strong>${note.name}</strong> - ${note.grade}
-                            <p>${note.note}</p>
-                            ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
-                            <button onclick="deleteNote('${doc.id}')">حذف</button>
-                        </div>
-                    `;
-                    notesContainer.appendChild(noteItem);
-                });
+                if (!latestNoteSnapshot.empty) {
+                    latestNoteSnapshot.forEach((doc) => {
+                        const note = doc.data();
+                        latestNoteContainer.innerHTML = `
+                            <div class="note-box">
+                                <h3>أحدث ملاحظة</h3>
+                                <p><strong>الاسم:</strong> ${note.name}</p>
+                                <p><strong>المرحلة:</strong> ${note.grade}</p>
+                                <p><strong>الملاحظة:</strong> ${note.note}</p>
+                                ${
+                                    note.image
+                                        ? `<img src="${note.image}" alt="صورة" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`
+                                        : ""
+                                }
+                            </div>
+                        `;
+                    });
+                } else {
+                    latestNoteContainer.innerHTML = `<p>لا توجد ملاحظات منشورة حتى الآن.</p>`;
+                }
             } catch (error) {
-                console.error("خطأ أثناء تحميل الملاحظات:", error);
-                notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
+                console.error("خطأ أثناء تحميل أحدث ملاحظة:", error);
+                latestNoteContainer.innerHTML = "حدث خطأ أثناء تحميل أحدث ملاحظة.";
             }
         }
 
@@ -76,7 +73,7 @@
                     timestamp: Date.now()
                 });
                 alert("تمت إضافة الملاحظة بنجاح!");
-                loadNotes(); // تحديث الملاحظات بعد الإضافة
+                loadLatestNote(); // تحديث أحدث ملاحظة بعد الإضافة
             } catch (error) {
                 console.error("خطأ أثناء الإضافة:", error);
                 alert("حدث خطأ أثناء إضافة الملاحظة.");
@@ -110,9 +107,39 @@
             }
         });
 
-        // تحميل الملاحظات عند فتح الصفحة
-        window.onload = loadNotes;
+        // تحميل أحدث ملاحظة عند فتح الصفحة
+        window.onload = loadLatestNote;
     </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .note-box {
+            background: #ffffff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #555;
+        }
+        .heart {
+            color: red;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -131,8 +158,13 @@
             <button type="submit">إضافة الملاحظة</button>
         </form>
 
-        <!-- عرض الملاحظات -->
-        <div id="notesContainer" class="notes-container"></div>
+        <!-- عرض أحدث ملاحظة -->
+        <div id="latestNoteContainer"></div>
     </div>
+
+    <footer>
+        <hr>
+        تم تصميم هذا السكربت بواسطة طالب الطب المهندس أحمد شاكر محمود الفهداوي - كلية الطب <span class="heart">❤</span>
+    </footer>
 </body>
 </html>
