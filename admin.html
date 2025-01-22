@@ -43,10 +43,33 @@
             background-color: #f44336;
             color: white;
         }
+        .notes-container {
+            margin-top: 30px;
+        }
+        .note-item {
+            background: #ffffff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+        .note-item button {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        .note-item button:hover {
+            background-color: #d32f2f;
+        }
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // إعداد Firebase
         const firebaseConfig = {
@@ -126,8 +149,63 @@
             toggleSetting('allowImages');
         });
 
-        // تحميل الإعدادات عند بداية تحميل الصفحة
-        window.onload = loadSettings;
+        // دالة لتحميل جميع الملاحظات
+        async function loadNotes() {
+            const notesContainer = document.getElementById("notesContainer");
+            notesContainer.innerHTML = "جارٍ تحميل الملاحظات...";
+            try {
+                const querySnapshot = await getDocs(collection(db, "notes"));
+                notesContainer.innerHTML = ""; // تنظيف الحاوية
+
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach((doc) => {
+                        const note = doc.data();
+                        const noteItem = document.createElement("div");
+                        noteItem.classList.add("note-item");
+                        noteItem.innerHTML = `
+                            <div>
+                                <h3>ملاحظة</h3>
+                                <p><strong>الاسم:</strong> ${note.name}</p>
+                                <p><strong>المرحلة:</strong> ${note.grade}</p>
+                                <p><strong>الملاحظة:</strong> ${note.note}</p>
+                                ${
+                                    note.image
+                                        ? `<img src="${note.image}" alt="صورة" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`
+                                        : ""
+                                }
+                                <button onclick="deleteNote('${doc.id}')">حذف الملاحظة</button>
+                            </div>
+                        `;
+                        notesContainer.appendChild(noteItem);
+                    });
+                } else {
+                    notesContainer.innerHTML = `<p>لا توجد ملاحظات منشورة حتى الآن.</p>`;
+                }
+            } catch (error) {
+                console.error("خطأ أثناء تحميل الملاحظات:", error);
+                notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
+            }
+        }
+
+        // دالة لحذف الملاحظة
+        window.deleteNote = async function (id) {
+            if (confirm("هل أنت متأكد من حذف هذه الملاحظة؟")) {
+                try {
+                    await deleteDoc(doc(db, "notes", id));
+                    alert("تم حذف الملاحظة بنجاح!");
+                    loadNotes(); // تحديث الملاحظات بعد الحذف
+                } catch (error) {
+                    console.error("خطأ أثناء الحذف:", error);
+                    alert("حدث خطأ أثناء حذف الملاحظة.");
+                }
+            }
+        };
+
+        // تحميل الإعدادات والملاحظات عند بداية الصفحة
+        window.onload = function () {
+            loadSettings();
+            loadNotes();
+        };
     </script>
 </head>
 <body>
@@ -146,6 +224,9 @@
 
         <button id="toggleAddNotes">تفعيل/تعطيل إضافة الملاحظات</button>
         <button id="toggleImageUpload">تفعيل/تعطيل رفع الصور</button>
+
+        <!-- عرض جميع الملاحظات -->
+        <div class="notes-container" id="notesContainer"></div>
     </div>
 </body>
 </html>
