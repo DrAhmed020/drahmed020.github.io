@@ -78,7 +78,7 @@
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // إعداد Firebase
         const firebaseConfig = {
@@ -118,9 +118,7 @@
                 const settings = settingsSnap.data();
                 updateUI(settings);
             } else {
-                // إنشاء إعدادات افتراضية إذا لم تكن موجودة
-                await setDoc(settingsDocRef, { canAddNotes: false, allowImages: false });
-                updateUI({ canAddNotes: false, allowImages: false });
+                console.error("لم يتم العثور على إعدادات صفحة الإدارة.");
             }
         }
 
@@ -154,12 +152,17 @@
 
         // تحديث حالة الإعدادات في Firestore
         async function toggleSetting(settingKey) {
-            const settingsSnap = await getDoc(settingsDocRef);
-            if (settingsSnap.exists()) {
-                const currentSettings = settingsSnap.data();
-                const newValue = !currentSettings[settingKey];
-                await updateDoc(settingsDocRef, { [settingKey]: newValue });
-                loadSettings();
+            try {
+                const settingsSnap = await getDoc(settingsDocRef);
+                if (settingsSnap.exists()) {
+                    const currentSettings = settingsSnap.data();
+                    const newValue = !currentSettings[settingKey];
+                    await updateDoc(settingsDocRef, { [settingKey]: newValue });
+                    loadSettings();
+                }
+            } catch (error) {
+                console.error("خطأ أثناء تحديث الإعداد:", error);
+                alert("حدث خطأ أثناء تحديث الإعداد. يرجى المحاولة لاحقًا.");
             }
         }
 
@@ -215,12 +218,20 @@
             }
         };
 
-        // تحميل الإعدادات والملاحظات عند بداية الصفحة
-        window.onload = function () {
+        // إضافة أحداث للأزرار وتحميل الإعدادات عند بداية الصفحة
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('toggleAddNotes').addEventListener('click', () => {
+                toggleSetting('canAddNotes');
+            });
+
+            document.getElementById('toggleImageUpload').addEventListener('click', () => {
+                toggleSetting('allowImages');
+            });
+
             checkPassword(); // التحقق من كلمة المرور
-            loadSettings();
-            loadNotes();
-        };
+            loadSettings(); // تحميل الإعدادات
+            loadNotes(); // تحميل الملاحظات
+        });
     </script>
 </head>
 <body>
