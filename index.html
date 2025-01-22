@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // إعداد Firebase
         const firebaseConfig = {
@@ -22,6 +22,34 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const settingsDocRef = doc(db, "adminSettings", "settings");
+
+        // تحميل إعدادات صفحة الإدارة
+        async function loadSettings() {
+            const settingsSnap = await getDoc(settingsDocRef);
+
+            if (settingsSnap.exists()) {
+                const settings = settingsSnap.data();
+                const form = document.getElementById("noteForm");
+                const addNoteAlert = document.getElementById("addNoteAlert");
+                const imageInput = document.getElementById("image");
+
+                // التحقق من حالة إضافة الملاحظات
+                if (!settings.canAddNotes) {
+                    form.style.display = "none";
+                    addNoteAlert.textContent = "إضافة الملاحظات معطلة حالياً بواسطة الإدارة.";
+                    addNoteAlert.style.display = "block";
+                } else {
+                    form.style.display = "block";
+                    addNoteAlert.style.display = "none";
+                }
+
+                // التحقق من حالة رفع الصور
+                imageInput.disabled = !settings.allowImages;
+            } else {
+                console.error("لم يتم العثور على إعدادات صفحة الإدارة.");
+            }
+        }
 
         // تحميل أحدث ملاحظة
         async function loadLatestNote() {
@@ -107,8 +135,11 @@
             }
         });
 
-        // تحميل أحدث ملاحظة عند فتح الصفحة
-        window.onload = loadLatestNote;
+        // تحميل الإعدادات وأحدث ملاحظة عند فتح الصفحة
+        window.onload = () => {
+            loadSettings();
+            loadLatestNote();
+        };
     </script>
     <style>
         body {
@@ -129,6 +160,12 @@
             margin-top: 20px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+        .alert {
+            color: red;
+            font-weight: bold;
+            margin: 20px 0;
+            display: none;
+        }
         footer {
             text-align: center;
             margin-top: 30px;
@@ -148,6 +185,9 @@
         <a href="notes.html" style="text-decoration: none;">
             <button style="margin-bottom: 20px;">عرض ملاحظات الطلاب</button>
         </a>
+
+        <!-- رسالة تنبيه إذا كانت الإضافة معطلة -->
+        <div id="addNoteAlert" class="alert"></div>
 
         <!-- نموذج إضافة الملاحظات -->
         <form id="noteForm">
