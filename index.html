@@ -24,6 +24,9 @@
         const db = getFirestore(app);
         const settingsDocRef = doc(db, "adminSettings", "settings");
 
+        let canAddNotes = true; // قيمة افتراضية
+        let allowImages = true; // قيمة افتراضية
+
         // تحميل إعدادات صفحة الإدارة
         async function loadSettings() {
             const settingsSnap = await getDoc(settingsDocRef);
@@ -34,8 +37,12 @@
                 const addNoteAlert = document.getElementById("addNoteAlert");
                 const imageInput = document.getElementById("image");
 
+                // تحديث الإعدادات
+                canAddNotes = settings.canAddNotes;
+                allowImages = settings.allowImages;
+
                 // التحقق من حالة إضافة الملاحظات
-                if (!settings.canAddNotes) {
+                if (!canAddNotes) {
                     form.style.display = "none";
                     addNoteAlert.textContent = "إضافة الملاحظات معطلة حالياً بواسطة الإدارة.";
                     addNoteAlert.style.display = "block";
@@ -45,7 +52,7 @@
                 }
 
                 // التحقق من حالة رفع الصور
-                imageInput.disabled = !settings.allowImages;
+                imageInput.disabled = !allowImages;
             } else {
                 console.error("لم يتم العثور على إعدادات صفحة الإدارة.");
             }
@@ -92,6 +99,10 @@
 
         // دالة لإضافة ملاحظة جديدة
         async function addNoteToFirestore(name, grade, note, imageURL) {
+            if (!canAddNotes) {
+                alert("إضافة الملاحظات معطلة حالياً بواسطة الإدارة.");
+                return;
+            }
             try {
                 await addDoc(collection(db, "notes"), {
                     name,
