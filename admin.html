@@ -66,6 +66,15 @@
         .note-item button:hover {
             background-color: #d32f2f;
         }
+        #videoContainer {
+            display: none;
+            margin-top: 20px;
+        }
+        iframe {
+            width: 100%;
+            max-width: 560px;
+            height: 315px;
+        }
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -86,6 +95,18 @@
         const db = getFirestore(app);
 
         const settingsDocRef = doc(db, "adminSettings", "settings");
+
+        // التحقق من كلمة المرور
+        function checkPassword() {
+            const correctPassword = "Ahmed*123"; // كلمة المرور الصحيحة
+            const userPassword = prompt("يرجى إدخال كلمة المرور للوصول إلى لوحة التحكم:");
+
+            if (userPassword !== correctPassword) {
+                alert("كلمة المرور غير صحيحة!");
+                document.getElementById("videoContainer").style.display = "block"; // عرض الفيديو
+                document.querySelector(".container").style.display = "none"; // إخفاء لوحة التحكم
+            }
+        }
 
         // تحميل الإعدادات الحالية من Firestore
         async function loadSettings() {
@@ -149,62 +170,10 @@
             toggleSetting('allowImages');
         });
 
-        // دالة لتحميل جميع الملاحظات
-        async function loadNotes() {
-            const notesContainer = document.getElementById("notesContainer");
-            notesContainer.innerHTML = "جارٍ تحميل الملاحظات...";
-            try {
-                const querySnapshot = await getDocs(collection(db, "notes"));
-                notesContainer.innerHTML = ""; // تنظيف الحاوية
-
-                if (!querySnapshot.empty) {
-                    querySnapshot.forEach((doc) => {
-                        const note = doc.data();
-                        const noteItem = document.createElement("div");
-                        noteItem.classList.add("note-item");
-                        noteItem.innerHTML = `
-                            <div>
-                                <h3>ملاحظة</h3>
-                                <p><strong>الاسم:</strong> ${note.name}</p>
-                                <p><strong>المرحلة:</strong> ${note.grade}</p>
-                                <p><strong>الملاحظة:</strong> ${note.note}</p>
-                                ${
-                                    note.image
-                                        ? `<img src="${note.image}" alt="صورة" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`
-                                        : ""
-                                }
-                                <button onclick="deleteNote('${doc.id}')">حذف الملاحظة</button>
-                            </div>
-                        `;
-                        notesContainer.appendChild(noteItem);
-                    });
-                } else {
-                    notesContainer.innerHTML = `<p>لا توجد ملاحظات منشورة حتى الآن.</p>`;
-                }
-            } catch (error) {
-                console.error("خطأ أثناء تحميل الملاحظات:", error);
-                notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
-            }
-        }
-
-        // دالة لحذف الملاحظة
-        window.deleteNote = async function (id) {
-            if (confirm("هل أنت متأكد من حذف هذه الملاحظة؟")) {
-                try {
-                    await deleteDoc(doc(db, "notes", id));
-                    alert("تم حذف الملاحظة بنجاح!");
-                    loadNotes(); // تحديث الملاحظات بعد الحذف
-                } catch (error) {
-                    console.error("خطأ أثناء الحذف:", error);
-                    alert("حدث خطأ أثناء حذف الملاحظة.");
-                }
-            }
-        };
-
         // تحميل الإعدادات والملاحظات عند بداية الصفحة
         window.onload = function () {
-            loadSettings();
-            loadNotes();
+            checkPassword(); // التحقق من كلمة المرور
+            loadSettings(); // تحميل الإعدادات
         };
     </script>
 </head>
@@ -227,6 +196,11 @@
 
         <!-- عرض جميع الملاحظات -->
         <div class="notes-container" id="notesContainer"></div>
+    </div>
+
+    <!-- فيديو عند إدخال كلمة مرور خاطئة -->
+    <div id="videoContainer">
+        <iframe src="https://www.youtube.com/embed/3vR-NfBxveA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
 </body>
 </html>
