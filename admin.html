@@ -193,6 +193,30 @@
                                 <button onclick="deleteNote('${doc.id}')">حذف الملاحظة</button>
                             </div>
                         `;
+						
+						const viewedCheckbox = document.createElement("input");
+viewedCheckbox.type = "checkbox";
+viewedCheckbox.checked = note.viewed || false;
+viewedCheckbox.dataset.id = doc.id;
+
+const commentBox = document.createElement("textarea");
+commentBox.placeholder = "إضافة تعليق...";
+commentBox.dataset.id = doc.id;
+commentBox.value = note.adminComment || "";
+
+const saveButton = document.createElement("button");
+saveButton.textContent = "حفظ التعديلات";
+saveButton.onclick = () => saveAdminChanges(doc.id, viewedCheckbox.checked, commentBox.value);
+
+noteItem.appendChild(viewedCheckbox);
+noteItem.appendChild(commentBox);
+noteItem.appendChild(saveButton);
+
+						
+						
+						
+						
+						
                         notesContainer.appendChild(noteItem);
                     });
                 } else {
@@ -203,6 +227,25 @@
                 notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
             }
         }
+
+
+// دالة حفظ اعدادات التعليق والمشاهدة 
+async function saveAdminChanges(noteId, viewed, comment) {
+    try {
+        await updateDoc(doc(db, "notes", noteId), {
+            viewed: viewed,
+            adminComment: comment
+        });
+        alert("تم حفظ التعديلات بنجاح!");
+    } catch (error) {
+        console.error("خطأ أثناء حفظ التعديلات:", error);
+        alert("حدث خطأ أثناء حفظ التعديلات.");
+    }
+}
+
+
+
+
 
         // دالة لحذف الملاحظة
         window.deleteNote = async function (id) {
