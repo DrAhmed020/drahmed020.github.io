@@ -3,13 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>عرض ملاحظات الطلاب</title>
+    <title>مشاركات الطلبة</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .note-item {
+            background: #ffffff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .note-item img {
+            max-width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            display: block;
+            margin: 10px auto;
+        }
+        .note-details {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .reaction-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .reaction-buttons button {
+            border: none;
+            background: #f8f8f8;
+            font-size: 18px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s, box-shadow 0.3s;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .reaction-buttons button:nth-child(1) { color: green; }
+        .reaction-buttons button:nth-child(2) { color: red; }
+        .reaction-buttons button:nth-child(3) { color: orange; } {
+            border: none;
+            background: #f8f8f8;
+            font-size: 18px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s, box-shadow 0.3s;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .reaction-buttons button:hover {
+            background: #ddd;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .admin-info {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy, limit, startAfter, endBefore } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy, limit, startAfter, endBefore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // إعداد Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDEWffPfy-fljp32H8AjemraCau-f9JN-M",
             authDomain: "student-notes-app-3d196.firebaseapp.com",
@@ -23,154 +83,155 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const notesContainer = document.getElementById("notesContainer");
-        const prevBtn = document.getElementById("prevBtn");
-        const nextBtn = document.getElementById("nextBtn");
+        document.addEventListener("DOMContentLoaded", () => {
+            const notesContainer = document.getElementById("notesContainer");
+            const prevBtn = document.getElementById("prevBtn");
+            const nextBtn = document.getElementById("nextBtn");
 
-        const pageSize = 5; // عدد الملاحظات في كل صفحة
-        let lastVisible = null;
-        let firstVisible = null;
+            const pageSize = 5;
+            let lastVisible = null;
+            let firstVisible = null;
 
-        // ألوان مميزة لكل ملاحظة
-        const colors = ["#FFEB3B", "#FFCDD2", "#C8E6C9", "#BBDEFB", "#D1C4E9", "#FFE0B2", "#F8BBD0", "#B3E5FC"];
+            async function reactToNote(noteId, reactionType) {
+    const noteRef = doc(db, "notes", noteId);
+    try {
+        const noteSnap = await getDoc(noteRef);
+        if (noteSnap.exists()) {
+            const noteData = noteSnap.data();
+            const updatedData = {
+                likes: noteData.likes || 0,
+                dislikes: noteData.dislikes || 0,
+                funnies: noteData.funnies || 0,
+            };
 
-        // دالة لجلب الملاحظات
-        async function loadNotes(direction = null) {
-            notesContainer.innerHTML = "جارٍ التحميل...";
-
-            try {
-                let notesQuery;
-                if (direction === "next" && lastVisible) {
-                    notesQuery = query(
-                        collection(db, "notes"),
-                        orderBy("timestamp", "desc"),
-                        startAfter(lastVisible),
-                        limit(pageSize)
-                    );
-                } else if (direction === "prev" && firstVisible) {
-                    notesQuery = query(
-                        collection(db, "notes"),
-                        orderBy("timestamp", "desc"),
-                        endBefore(firstVisible),
-                        limit(pageSize)
-                    );
-                } else {
-                    notesQuery = query(
-                        collection(db, "notes"),
-                        orderBy("timestamp", "desc"),
-                        limit(pageSize)
-                    );
+            const userReactions = noteData.userReactions || {};
+            const userId = "current_user_id"; // استبدل هذا بمعرف المستخدم الفعلي
+            
+            if (userReactions[userId] === reactionType) {
+                // إذا كان نفس التفاعل، يتم إلغاؤه
+                updatedData[reactionType] -= 1;
+                delete userReactions[userId];
+            } else {
+                // إذا كان هناك تفاعل سابق، يتم إزالته واستبداله بالجديد
+                if (userReactions[userId]) {
+                    updatedData[userReactions[userId]] -= 1;
                 }
-
-                const querySnapshot = await getDocs(notesQuery);
-
-                if (!querySnapshot.empty) {
-                    firstVisible = querySnapshot.docs[0];
-                    lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-                    notesContainer.innerHTML = "";
-
-                    querySnapshot.forEach((doc, index) => {
-                        const note = doc.data();
-                        const noteItem = document.createElement("div");
-                        noteItem.classList.add("note-item");
-
-                        // تعيين لون مختلف لكل ملاحظة
-                        const randomColor = colors[index % colors.length];
-                        noteItem.style.backgroundColor = randomColor;
-
-                        noteItem.innerHTML = `
-                            <div>
-                                <strong>${note.name}</strong> - ${note.grade}
-                                <p>${note.note}</p>
-                                ${note.image ? `<img src="${note.image}" alt="صورة" style="max-width: 100%; border-radius: 5px;">` : ""}
-                            </div>
-                        `;
-                        notesContainer.appendChild(noteItem);
-                    });
-
-                    // التحكم في حالة الأزرار
-                    prevBtn.disabled = !firstVisible;
-                    nextBtn.disabled = querySnapshot.size < pageSize;
-                } else {
-                    notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
-                }
-            } catch (error) {
-                console.error("خطأ أثناء جلب الملاحظات:", error);
-                notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
+                updatedData[reactionType] += 1;
+                userReactions[userId] = reactionType;
             }
+
+            await updateDoc(noteRef, { ...updatedData, userReactions });
+            loadNotes();
         }
+    } catch (error) {
+        console.error("خطأ أثناء تحديث التفاعل:", error);
+        alert("حدث خطأ أثناء تسجيل التفاعل.");
+    }
+}
 
-        // التعامل مع أزرار الصفحة
-        prevBtn.addEventListener("click", () => loadNotes("prev"));
-        nextBtn.addEventListener("click", () => loadNotes("next"));
 
-        // تحميل الصفحة الأولى عند فتح الصفحة
-        window.onload = () => loadNotes();
+            async function loadNotes(direction = null) {
+                notesContainer.innerHTML = "جارٍ التحميل...";
+                try {
+                    let notesQuery = query(collection(db, "notes"), orderBy("timestamp", "desc"), limit(pageSize));
+                    const querySnapshot = await getDocs(notesQuery);
+
+                    if (!querySnapshot.empty) {
+                        firstVisible = querySnapshot.docs[0];
+                        lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+                        notesContainer.innerHTML = "";
+
+                        querySnapshot.forEach((doc) => {
+                            const note = doc.data();
+                            const noteItem = document.createElement("div");
+                            noteItem.classList.add("note-item");
+
+                            noteItem.innerHTML = `
+                                <div class="note-details">
+                                    <strong>${note.name}</strong> - ${note.grade}
+                                </div>
+                                <p>${note.note}</p>
+                                ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
+                            `;
+
+                            const reactionButtons = document.createElement("div");
+                            reactionButtons.classList.add("reaction-buttons");
+                            
+                            const likeButton = document.createElement("button");
+                            likeButton.innerHTML = `<span style='color: green;'>❤</span> (${note.likes || 0})`;
+                            likeButton.onclick = () => reactToNote(doc.id, "likes");
+                            
+                            const dislikeButton = document.createElement("button");
+                            dislikeButton.innerHTML = `<span style='color: red;'>👎</span> (${note.dislikes || 0})`;
+                            dislikeButton.onclick = () => reactToNote(doc.id, "dislikes");
+                            
+                            const funnyButton = document.createElement("button");
+                            funnyButton.innerHTML = `<span style='color: orange;'>😂</span> (${note.funnies || 0})`;
+                            funnyButton.onclick = () => reactToNote(doc.id, "funnies");
+
+                            reactionButtons.appendChild(likeButton);
+                            reactionButtons.appendChild(dislikeButton);
+                            reactionButtons.appendChild(funnyButton);
+                            noteItem.appendChild(reactionButtons);
+                            
+                            const adminInfo = document.createElement("div");
+                            adminInfo.classList.add("admin-info");
+                            
+                            if (note.viewed) {
+                                const viewedLabel = document.createElement("p");
+                                viewedLabel.style.color = "green";
+                                viewedLabel.textContent = "✔ تم الاطلاع عليها";
+                                adminInfo.appendChild(viewedLabel);
+                            }
+
+                            if (note.adminComment) {
+                                const adminComment = document.createElement("p");
+                                adminComment.style.color = "blue";
+                                adminComment.textContent = "💬 تعليق الإدارة: " + note.adminComment;
+                                adminInfo.appendChild(adminComment);
+                            }
+                            
+                            noteItem.appendChild(adminInfo);
+                            notesContainer.appendChild(noteItem);
+                        });
+                    } else {
+                        notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
+                    }
+                } catch (error) {
+                    console.error("خطأ أثناء جلب الملاحظات:", error);
+                    notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
+                }
+            }
+
+            prevBtn.addEventListener("click", () => loadNotes("prev"));
+            nextBtn.addEventListener("click", () => loadNotes("next"));
+
+            loadNotes();
+        });
     </script>
-    <style>
-        /* تحسين تنسيق الأزرار */
-        button {
-            background-color: #4CAF50;
+<style>
+        .add-post-button {
+            display: block;
+            width: fit-content;
+            background: green;
             color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            cursor: pointer;
-            margin: 10px;
-        }
-
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        button:hover:not(:disabled) {
-            background-color: #45a049;
-        }
-
-        .note-item {
-            margin: 10px;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            text-align: left;
-        }
-
-        .back-button {
-            display: flex;
-            justify-content: center;
-            margin: 20px;
-        }
-
-        .back-button a {
             text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 16px;
+            margin: 10px auto;
+            text-align: center;
         }
-
-        .back-button button {
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .add-post-button:hover {
+            background: darkgreen;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>عرض ملاحظات الطلاب</h1>
-
-        <!-- زر الرجوع إلى صفحة الإضافة -->
-        <div class="back-button">
-            <a href="index.html">
-                <button>
-                    <img src="https://img.icons8.com/ios-filled/20/ffffff/plus-math.png" alt="إضافة" />
-                    إضافة ملاحظة
-                </button>
-            </a>
-        </div>
-
-        <!-- عرض الملاحظات -->
+        <h1>مشاركات الطلبة</h1>
+        <a href="index.html" class="add-post-button">إضافة مشاركة</a>
         <div id="notesContainer" class="notes-container"></div>
-
-        <!-- أزرار التنقل بين الصفحات -->
         <div class="pagination">
             <button id="prevBtn" disabled>الصفحة السابقة</button>
             <button id="nextBtn" disabled>الصفحة التالية</button>
