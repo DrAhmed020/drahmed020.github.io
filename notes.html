@@ -104,9 +104,15 @@
                 funnies: noteData.funnies || 0,
             };
 
+            // 🔹 الحصول على معرف المستخدم الفريد (يجب أن يكون دائمًا ثابتًا لكل مستخدم)
+            let userId = localStorage.getItem("userId");
+            if (!userId) {
+                userId = "user_" + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem("userId", userId);
+            }
+
             const userReactions = noteData.userReactions || {};
-            const userId = "current_user_id"; // استبدل هذا بمعرف المستخدم الفعلي
-            
+
             if (userReactions[userId] === reactionType) {
                 // إذا كان نفس التفاعل، يتم إلغاؤه
                 updatedData[reactionType] -= 1;
@@ -129,22 +135,20 @@
     }
 }
 
-async function loadNotes(direction = null) {
+async function loadNotes() {
     notesContainer.innerHTML = "جارٍ التحميل...";
     try {
         let notesQuery = query(collection(db, "notes"), orderBy("timestamp", "desc"), limit(pageSize));
         const querySnapshot = await getDocs(notesQuery);
 
         if (!querySnapshot.empty) {
-            firstVisible = querySnapshot.docs[0];
-            lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
             notesContainer.innerHTML = "";
 
             querySnapshot.forEach((doc) => {
                 const note = doc.data();
                 const noteItem = document.createElement("div");
                 noteItem.classList.add("note-item");
-                
+
                 noteItem.innerHTML = `
                     <div class="note-details">
                         <strong>${note.name}</strong> - ${note.grade}
@@ -155,21 +159,26 @@ async function loadNotes(direction = null) {
 
                 const reactionButtons = document.createElement("div");
                 reactionButtons.classList.add("reaction-buttons");
-                
+
+                let userId = localStorage.getItem("userId");
+                if (!userId) {
+                    userId = "user_" + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem("userId", userId);
+                }
+
                 const userReactions = note.userReactions || {};
-                const userId = "current_user_id"; // استبدل هذا بمعرف المستخدم الفعلي
                 const userReaction = userReactions[userId] || null;
 
                 const likeButton = document.createElement("button");
                 likeButton.innerHTML = `<span style='color: green;'>❤</span> (${note.likes || 0})`;
                 likeButton.onclick = () => reactToNote(doc.id, "likes");
                 if (userReaction === "likes") likeButton.classList.add("selected");
-                
+
                 const dislikeButton = document.createElement("button");
                 dislikeButton.innerHTML = `<span style='color: red;'>👎</span> (${note.dislikes || 0})`;
                 dislikeButton.onclick = () => reactToNote(doc.id, "dislikes");
                 if (userReaction === "dislikes") dislikeButton.classList.add("selected");
-                
+
                 const funnyButton = document.createElement("button");
                 funnyButton.innerHTML = `<span style='color: orange;'>😂</span> (${note.funnies || 0})`;
                 funnyButton.onclick = () => reactToNote(doc.id, "funnies");
