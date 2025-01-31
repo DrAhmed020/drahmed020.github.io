@@ -4,78 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f8f8;
-            text-align: center;
-        }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        button {
-            padding: 10px 20px;
-            margin: 10px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .status {
-            margin: 20px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .enabled {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .disabled {
-            background-color: #f44336;
-            color: white;
-        }
-        .notes-container {
-            margin-top: 30px;
-        }
-        .note-item {
-            background: #ffffff;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: left;
-        }
-        .note-item button {
-            background-color: #f44336;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 10px 20px;
-            cursor: pointer;
-        }
-        .note-item button:hover {
-            background-color: #d32f2f;
-        }
-        #videoContainer {
-            display: none;
-            margin-top: 20px;
-        }
-        iframe {
-            width: 100%;
-            max-width: 560px;
-            height: 315px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
@@ -93,171 +22,85 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
         const settingsDocRef = doc(db, "adminSettings", "settings");
 
-        // التحقق من كلمة المرور
-        function checkPassword() {
-            const correctPassword = "Ahmed*123"; // كلمة المرور الصحيحة
-            const userPassword = prompt("يرجى إدخال كلمة المرور للوصول إلى لوحة التحكم:");
-
-            if (userPassword !== correctPassword) {
-                alert("كلمة المرور غير صحيحة!");
-                document.getElementById("videoContainer").style.display = "block"; // عرض الفيديو
-                document.querySelector(".container").style.display = "none"; // إخفاء لوحة التحكم
-                const video = document.getElementById("errorVideo");
-                video.src += "?autoplay=1"; // تشغيل الفيديو تلقائياً
-            }
-        }
-
-        // تحميل الإعدادات الحالية من Firestore
         async function loadSettings() {
             const settingsSnap = await getDoc(settingsDocRef);
-
             if (settingsSnap.exists()) {
                 const settings = settingsSnap.data();
-                updateUI(settings);
-            } else {
-                console.error("لم يتم العثور على إعدادات صفحة الإدارة.");
+                document.getElementById('addNotesStatus').checked = settings.canAddNotes;
+                document.getElementById('imageUploadStatus').checked = settings.allowImages;
             }
         }
 
-        // تحديث واجهة المستخدم بناءً على الإعدادات
-        function updateUI(settings) {
-            const addNotesStatus = document.getElementById('addNotesStatus');
-            const addNotesText = document.getElementById('addNotesText');
-            const imageUploadStatus = document.getElementById('imageUploadStatus');
-            const imageUploadText = document.getElementById('imageUploadText');
-
-            if (settings.canAddNotes) {
-                addNotesStatus.classList.add('enabled');
-                addNotesStatus.classList.remove('disabled');
-                addNotesText.textContent = 'فعال';
-            } else {
-                addNotesStatus.classList.add('disabled');
-                addNotesStatus.classList.remove('enabled');
-                addNotesText.textContent = 'غير فعال';
-            }
-
-            if (settings.allowImages) {
-                imageUploadStatus.classList.add('enabled');
-                imageUploadStatus.classList.remove('disabled');
-                imageUploadText.textContent = 'فعال';
-            } else {
-                imageUploadStatus.classList.add('disabled');
-                imageUploadStatus.classList.remove('enabled');
-                imageUploadText.textContent = 'غير فعال';
-            }
-        }
-
-        // تحديث حالة الإعدادات في Firestore
         async function toggleSetting(settingKey) {
-            try {
-                const settingsSnap = await getDoc(settingsDocRef);
-                if (settingsSnap.exists()) {
-                    const currentSettings = settingsSnap.data();
-                    const newValue = !currentSettings[settingKey];
-                    await updateDoc(settingsDocRef, { [settingKey]: newValue });
-                    loadSettings();
-                }
-            } catch (error) {
-                console.error("خطأ أثناء تحديث الإعداد:", error);
-                alert("حدث خطأ أثناء تحديث الإعداد. يرجى المحاولة لاحقًا.");
+            const settingsSnap = await getDoc(settingsDocRef);
+            if (settingsSnap.exists()) {
+                const currentSettings = settingsSnap.data();
+                const newValue = !currentSettings[settingKey];
+                await updateDoc(settingsDocRef, { [settingKey]: newValue });
+                loadSettings();
             }
         }
 
-        // تحميل جميع الملاحظات
-        async function loadNotes() {
+        async function loadNotesForAdmin() {
             const notesContainer = document.getElementById("notesContainer");
             notesContainer.innerHTML = "جارٍ تحميل الملاحظات...";
             try {
                 const querySnapshot = await getDocs(collection(db, "notes"));
-                notesContainer.innerHTML = ""; // تنظيف الحاوية
+                notesContainer.innerHTML = "";
 
-                if (!querySnapshot.empty) {
-                    querySnapshot.forEach((doc) => {
-                        const note = doc.data();
-                        const noteItem = document.createElement("div");
-                        noteItem.classList.add("note-item");
-                        noteItem.innerHTML = `
-                            <div>
-                                <h3>ملاحظة</h3>
-                                <p><strong>الاسم:</strong> ${note.name}</p>
-                                <p><strong>المرحلة:</strong> ${note.grade}</p>
-                                <p><strong>الملاحظة:</strong> ${note.note}</p>
-                                ${
-                                    note.image
-                                        ? `<img src="${note.image}" alt="صورة" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`
-                                        : ""
-                                }
-                                <button onclick="deleteNote('${doc.id}')">حذف الملاحظة</button>
-                            </div>
-                        `;
-                        notesContainer.appendChild(noteItem);
-                    });
-                } else {
-                    notesContainer.innerHTML = `<p>لا توجد ملاحظات منشورة حتى الآن.</p>`;
-                }
+                querySnapshot.forEach((doc) => {
+                    const note = doc.data();
+                    const noteItem = document.createElement("div");
+                    noteItem.classList.add("note-item");
+                    noteItem.innerHTML = `
+                        <h3>ملاحظة</h3>
+                        <p><strong>الاسم:</strong> ${note.name}</p>
+                        <p><strong>المرحلة:</strong> ${note.grade}</p>
+                        <p><strong>الملاحظة:</strong> ${note.note}</p>
+                        ${note.image ? `<img src="${note.image}" alt="صورة" style="max-width: 100%; border-radius: 5px;">` : ""}
+                        
+                        <label><input type="checkbox" class="viewedCheckbox" data-id="${doc.id}" ${note.viewed ? "checked" : ""}> تم الاطلاع</label>
+                        <textarea class="adminComment" data-id="${doc.id}" placeholder="إضافة تعليق...">${note.adminComment || ""}</textarea>
+                        <button onclick="saveAdminChanges('${doc.id}')">حفظ التعديلات</button>
+                        <button onclick="deleteNote('${doc.id}')">حذف الملاحظة</button>
+                    `;
+                    notesContainer.appendChild(noteItem);
+                });
             } catch (error) {
                 console.error("خطأ أثناء تحميل الملاحظات:", error);
                 notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
             }
         }
 
-        // دالة لحذف الملاحظة
-        window.deleteNote = async function (id) {
-            if (confirm("هل أنت متأكد من حذف هذه الملاحظة؟")) {
-                try {
-                    await deleteDoc(doc(db, "notes", id));
-                    alert("تم حذف الملاحظة بنجاح!");
-                    loadNotes(); // تحديث الملاحظات بعد الحذف
-                } catch (error) {
-                    console.error("خطأ أثناء الحذف:", error);
-                    alert("حدث خطأ أثناء حذف الملاحظة.");
-                }
+        async function saveAdminChanges(noteId) {
+            const checkbox = document.querySelector(`.viewedCheckbox[data-id='${noteId}']`);
+            const commentBox = document.querySelector(`.adminComment[data-id='${noteId}']`);
+            try {
+                await updateDoc(doc(db, "notes", noteId), {
+                    viewed: checkbox.checked,
+                    adminComment: commentBox.value
+                });
+                alert("تم حفظ التعديلات بنجاح!");
+            } catch (error) {
+                console.error("خطأ أثناء حفظ التعديلات:", error);
+                alert("حدث خطأ أثناء حفظ التعديلات.");
             }
-        };
+        }
 
-        // إضافة أحداث للأزرار وتحميل الإعدادات عند بداية الصفحة
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('toggleAddNotes').addEventListener('click', () => {
-                toggleSetting('canAddNotes');
-            });
-
-            document.getElementById('toggleImageUpload').addEventListener('click', () => {
-                toggleSetting('allowImages');
-            });
-
-            checkPassword(); // التحقق من كلمة المرور
-            loadSettings(); // تحميل الإعدادات
-            loadNotes(); // تحميل الملاحظات
+            loadSettings();
+            loadNotesForAdmin();
         });
     </script>
 </head>
 <body>
     <div class="container">
         <h1>لوحة تحكم الإدارة</h1>
-        
-        <!-- عرض حالة إضافة الملاحظات -->
-        <div class="status" id="addNotesStatus">
-            <strong>إضافة الملاحظات:</strong> <span id="addNotesText">غير فعال</span>
-        </div>
-
-        <!-- عرض حالة رفع الصور -->
-        <div class="status" id="imageUploadStatus">
-            <strong>رفع الصور:</strong> <span id="imageUploadText">غير فعال</span>
-        </div>
-
-        <button id="toggleAddNotes">تفعيل/تعطيل إضافة الملاحظات</button>
-        <button id="toggleImageUpload">تفعيل/تعطيل رفع الصور</button>
-
-        <!-- عرض جميع الملاحظات -->
-        <div class="notes-container" id="notesContainer"></div>
-    </div>
-
-    <!-- فيديو عند إدخال كلمة مرور خاطئة -->
-    <div id="videoContainer">
-        <iframe id="errorVideo" src="https://www.youtube.com/embed/3vR-NfBxveA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <label><input type="checkbox" id="addNotesStatus" onchange="toggleSetting('canAddNotes')"> تفعيل/تعطيل إضافة الملاحظات</label>
+        <label><input type="checkbox" id="imageUploadStatus" onchange="toggleSetting('allowImages')"> تفعيل/تعطيل رفع الصور</label>
+        <div id="notesContainer" class="notes-container"></div>
     </div>
 </body>
 </html>
