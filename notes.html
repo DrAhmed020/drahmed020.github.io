@@ -92,7 +92,7 @@
             let lastVisible = null;
             let firstVisible = null;
 
-            async function reactToNote(noteId, reactionType) {
+          async function reactToNote(noteId, reactionType) {
     const noteRef = doc(db, "notes", noteId);
     try {
         const noteSnap = await getDoc(noteRef);
@@ -129,50 +129,62 @@
     }
 }
 
+async function loadNotes(direction = null) {
+    notesContainer.innerHTML = "جارٍ التحميل...";
+    try {
+        let notesQuery = query(collection(db, "notes"), orderBy("timestamp", "desc"), limit(pageSize));
+        const querySnapshot = await getDocs(notesQuery);
 
-            async function loadNotes(direction = null) {
-                notesContainer.innerHTML = "جارٍ التحميل...";
-                try {
-                    let notesQuery = query(collection(db, "notes"), orderBy("timestamp", "desc"), limit(pageSize));
-                    const querySnapshot = await getDocs(notesQuery);
+        if (!querySnapshot.empty) {
+            firstVisible = querySnapshot.docs[0];
+            lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+            notesContainer.innerHTML = "";
 
-                    if (!querySnapshot.empty) {
-                        firstVisible = querySnapshot.docs[0];
-                        lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
-                        notesContainer.innerHTML = "";
+            querySnapshot.forEach((doc) => {
+                const note = doc.data();
+                const noteItem = document.createElement("div");
+                noteItem.classList.add("note-item");
+                
+                noteItem.innerHTML = `
+                    <div class="note-details">
+                        <strong>${note.name}</strong> - ${note.grade}
+                    </div>
+                    <p>${note.note}</p>
+                    ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
+                `;
 
-                        querySnapshot.forEach((doc) => {
-                            const note = doc.data();
-                            const noteItem = document.createElement("div");
-                            noteItem.classList.add("note-item");
+                const reactionButtons = document.createElement("div");
+                reactionButtons.classList.add("reaction-buttons");
+                
+                const userReactions = note.userReactions || {};
+                const userId = "current_user_id"; // استبدل هذا بمعرف المستخدم الفعلي
+                const userReaction = userReactions[userId] || null;
 
-                            noteItem.innerHTML = `
-                                <div class="note-details">
-                                    <strong>${note.name}</strong> - ${note.grade}
-                                </div>
-                                <p>${note.note}</p>
-                                ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
-                            `;
+                const likeButton = document.createElement("button");
+                likeButton.innerHTML = `<span style='color: green;'>❤</span> (${note.likes || 0})`;
+                likeButton.onclick = () => reactToNote(doc.id, "likes");
+                if (userReaction === "likes") likeButton.classList.add("selected");
+                
+                const dislikeButton = document.createElement("button");
+                dislikeButton.innerHTML = `<span style='color: red;'>👎</span> (${note.dislikes || 0})`;
+                dislikeButton.onclick = () => reactToNote(doc.id, "dislikes");
+                if (userReaction === "dislikes") dislikeButton.classList.add("selected");
+                
+                const funnyButton = document.createElement("button");
+                funnyButton.innerHTML = `<span style='color: orange;'>😂</span> (${note.funnies || 0})`;
+                funnyButton.onclick = () => reactToNote(doc.id, "funnies");
+                if (userReaction === "funnies") funnyButton.classList.add("selected");
 
-                            const reactionButtons = document.createElement("div");
-                            reactionButtons.classList.add("reaction-buttons");
-                            
-                            const likeButton = document.createElement("button");
-                            likeButton.innerHTML = `<span style='color: green;'>❤</span> (${note.likes || 0})`;
-                            likeButton.onclick = () => reactToNote(doc.id, "likes");
-                            
-                            const dislikeButton = document.createElement("button");
-                            dislikeButton.innerHTML = `<span style='color: red;'>👎</span> (${note.dislikes || 0})`;
-                            dislikeButton.onclick = () => reactToNote(doc.id, "dislikes");
-                            
-                            const funnyButton = document.createElement("button");
-                            funnyButton.innerHTML = `<span style='color: orange;'>😂</span> (${note.funnies || 0})`;
-                            funnyButton.onclick = () => reactToNote(doc.id, "funnies");
+                reactionButtons.appendChild(likeButton);
+                reactionButtons.appendChild(dislikeButton);
+                reactionButtons.appendChild(funnyButton);
+                noteItem.appendChild(reactionButtons);
 
-                            reactionButtons.appendChild(likeButton);
-                            reactionButtons.appendChild(dislikeButton);
-                            reactionButtons.appendChild(funnyButton);
-                            noteItem.appendChild(reactionButtons);
+                const selectedReaction = document.createElement("p");
+                selectedReaction.style.fontWeight = "bold";
+                selectedReaction.style.color = "blue";
+                selectedReaction.textContent = userReaction ? `لقد اخترت: ${userReaction}` : "لم تختر تفاعلًا بعد";
+                noteItem.appendChild(selectedReaction);
                             
                             const adminInfo = document.createElement("div");
                             adminInfo.classList.add("admin-info");
