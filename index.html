@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ملاحظات الطلاب</title>
+    <title>ملاحظات وشكاوى طلبة كلية الطب - جامعة الأنبار</title>
     <link rel="stylesheet" href="styles.css">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -191,10 +191,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>ملاحظات الطلاب</h1>
+        <h1>ملاحظات وشكاوى طلبة كلية الطب - جامعة الأنبار</h1>
+                <h1>برعاية الاستاذ الدكتور وليد نصار جفال -عميد كلية الطب تم أنشاء هذا التطبيق لمتابعة ملاحظات وشكاوى ويوميات طلبة كلية الطب</h1>
+
         <!-- زر عرض الملاحظات -->
         <a href="notes.html" style="text-decoration: none;">
-            <button style="margin-bottom: 20px;">عرض ملاحظات الطلاب</button>
+            <button style="margin-bottom: 20px;">عرض جميع الملصقات التي نشرها الطلاب</button>
         </a>
 
         <!-- رسالة تنبيه إذا كانت الإضافة معطلة -->
@@ -204,6 +206,8 @@
         <form id="noteForm">
             <input type="text" id="name" placeholder="الاسم" required>
             <input type="text" id="grade" placeholder="المرحلة" required>
+                            <h5>تذكر عزيزي الطالب : قوله تعالى  ( مَا يَلْفِظُ مِنْ قَوْلٍ إِلَّا لَدَيْهِ رَقِيبٌ عَتِيدٌ [ق:18] )</h5>
+
             <textarea id="note" placeholder="اكتب ملاحظتك هنا" required></textarea>
             <input type="file" id="image" accept="image/*">
             <button type="submit">إضافة الملاحظة</button>
