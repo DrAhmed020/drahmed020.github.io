@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة</title>
     <style>
+	.note-item img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.note-item img:hover {
+    transform: scale(1.1);
+}
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f8f8f8;
@@ -76,6 +87,8 @@
             height: 315px;
         }
     </style>
+	
+	
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
@@ -185,13 +198,11 @@
                                 <p><strong>الاسم:</strong> ${note.name}</p>
                                 <p><strong>المرحلة:</strong> ${note.grade}</p>
                                 <p><strong>الملاحظة:</strong> ${note.note}</p>
-                                ${
-                                    note.image
-                                        ? `<img src="${note.image}" alt="صورة" style="max-width: 100%; border-radius: 5px; margin-top: 10px;">`
-                                        : ""
-                                }
+                                ${note.image ? `<img src="${note.image}" onclick="openImage('${note.image}')">` : ""}
+
                                 <button onclick="deleteNote('${doc.id}')">حذف الملاحظة</button>
                             </div>
+							
                         `;
 						
 						const viewedCheckbox = document.createElement("input");
@@ -260,6 +271,15 @@ async function saveAdminChanges(noteId, viewed, comment) {
                 }
             }
         };
+		
+		//دالة فتح الصورة بحجمها الاصلي
+		function openImage(imageUrl) {
+    let newWindow = window.open();
+    newWindow.document.write(`<img src="${imageUrl}" style="width:100%; height:auto;">`);
+}
+
+
+
 
         // إضافة أحداث للأزرار وتحميل الإعدادات عند بداية الصفحة
         document.addEventListener("DOMContentLoaded", () => {
@@ -275,6 +295,7 @@ async function saveAdminChanges(noteId, viewed, comment) {
             loadSettings(); // تحميل الإعدادات
             loadNotes(); // تحميل الملاحظات
         });
+		
     </script>
 </head>
 <body>
