@@ -316,8 +316,13 @@ async function saveAdminChanges(noteId, viewed, comment) {
         <button id="toggleImageUpload">تفعيل/تعطيل رفع الصور</button>
 
         <!-- عرض جميع الملاحظات -->
-	    <a href="notes.html" class="add-post-button">عرض جميع المشاركات</a>
-        <div class="notes-container" id="notesContainer"></div>
+<div class="button-container">
+    <button onclick="window.location.href='notes.html'" class="view-all-button">عرض جميع المشاركات</button>
+</div>
+
+	    
+	    
+	    <div class="notes-container" id="notesContainer"></div>
     </div>
 
     <!-- فيديو عند إدخال كلمة مرور خاطئة -->
