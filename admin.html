@@ -5,41 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الإدارة</title>
     <style>
-	.note-item img {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 5px;
-    cursor: pointer;
-}
-.note-item img:hover {
-    transform: scale(1.1);
-}
-
         body {
             font-family: Arial, sans-serif;
             background-color: #f8f8f8;
-            text-align: center;
+            display: flex;
+        }
+        .tabs {
+            width: 200px;
+            background: #f1f1f1;
+            padding: 10px;
+            border-right: 1px solid #ddd;
+        }
+        .tabs button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background: none;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .tabs button:hover, .tabs button.active {
+            background: #ddd;
+        }
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+        }
+        .note-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .note-item img:hover {
+            transform: scale(1.1);
         }
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 20px auto;
             padding: 20px;
             background-color: #fff;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        button {
-            padding: 10px 20px;
-            margin: 10px;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #45a049;
         }
         .status {
             margin: 20px 0;
@@ -87,13 +97,11 @@
             height: 315px;
         }
     </style>
-	
-	
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // إعداد Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDEWffPfy-fljp32H8AjemraCau-f9JN-M",
             authDomain: "student-notes-app-3d196.firebaseapp.com",
@@ -109,21 +117,19 @@
 
         const settingsDocRef = doc(db, "adminSettings", "settings");
 
-        // التحقق من كلمة المرور
         function checkPassword() {
-            const correctPassword = "Ahmed*123"; // كلمة المرور الصحيحة
+            const correctPassword = "Ahmed*123";
             const userPassword = prompt("يرجى إدخال كلمة المرور للوصول إلى لوحة التحكم:");
 
             if (userPassword !== correctPassword) {
                 alert("كلمة المرور غير صحيحة!");
-                document.getElementById("videoContainer").style.display = "block"; // عرض الفيديو
-                document.querySelector(".container").style.display = "none"; // إخفاء لوحة التحكم
+                document.getElementById("videoContainer").style.display = "block";
+                document.querySelector(".container").style.display = "none";
                 const video = document.getElementById("errorVideo");
-                video.src += "?autoplay=1"; // تشغيل الفيديو تلقائياً
+                video.src += "?autoplay=1";
             }
         }
 
-        // تحميل الإعدادات الحالية من Firestore
         async function loadSettings() {
             const settingsSnap = await getDoc(settingsDocRef);
 
@@ -135,7 +141,6 @@
             }
         }
 
-        // تحديث واجهة المستخدم بناءً على الإعدادات
         function updateUI(settings) {
             const addNotesStatus = document.getElementById('addNotesStatus');
             const addNotesText = document.getElementById('addNotesText');
@@ -163,7 +168,6 @@
             }
         }
 
-        // تحديث حالة الإعدادات في Firestore
         async function toggleSetting(settingKey) {
             try {
                 const settingsSnap = await getDoc(settingsDocRef);
@@ -179,13 +183,12 @@
             }
         }
 
-        // تحميل جميع الملاحظات
         async function loadNotes() {
             const notesContainer = document.getElementById("notesContainer");
             notesContainer.innerHTML = "جارٍ تحميل الملاحظات...";
             try {
                 const querySnapshot = await getDocs(collection(db, "notes"));
-                notesContainer.innerHTML = ""; // تنظيف الحاوية
+                notesContainer.innerHTML = "";
 
                 if (!querySnapshot.empty) {
                     querySnapshot.forEach((doc) => {
@@ -199,35 +202,28 @@
                                 <p><strong>المرحلة:</strong> ${note.grade}</p>
                                 <p><strong>الملاحظة:</strong> ${note.note}</p>
                                 ${note.image ? `<img src="${note.image}" onclick="openImage('${note.image}')">` : ""}
-
                                 <button onclick="deleteNote('${doc.id}')">حذف الملاحظة</button>
                             </div>
-							
                         `;
-						
-						const viewedCheckbox = document.createElement("input");
-viewedCheckbox.type = "checkbox";
-viewedCheckbox.checked = note.viewed || false;
-viewedCheckbox.dataset.id = doc.id;
 
-const commentBox = document.createElement("textarea");
-commentBox.placeholder = "إضافة تعليق...";
-commentBox.dataset.id = doc.id;
-commentBox.value = note.adminComment || "";
+                        const viewedCheckbox = document.createElement("input");
+                        viewedCheckbox.type = "checkbox";
+                        viewedCheckbox.checked = note.viewed || false;
+                        viewedCheckbox.dataset.id = doc.id;
 
-const saveButton = document.createElement("button");
-saveButton.textContent = "حفظ التعديلات";
-saveButton.onclick = () => saveAdminChanges(doc.id, viewedCheckbox.checked, commentBox.value);
+                        const commentBox = document.createElement("textarea");
+                        commentBox.placeholder = "إضافة تعليق...";
+                        commentBox.dataset.id = doc.id;
+                        commentBox.value = note.adminComment || "";
 
-noteItem.appendChild(viewedCheckbox);
-noteItem.appendChild(commentBox);
-noteItem.appendChild(saveButton);
+                        const saveButton = document.createElement("button");
+                        saveButton.textContent = "حفظ التعديلات";
+                        saveButton.onclick = () => saveAdminChanges(doc.id, viewedCheckbox.checked, commentBox.value);
 
-						
-						
-						
-						
-						
+                        noteItem.appendChild(viewedCheckbox);
+                        noteItem.appendChild(commentBox);
+                        noteItem.appendChild(saveButton);
+
                         notesContainer.appendChild(noteItem);
                     });
                 } else {
@@ -239,49 +235,37 @@ noteItem.appendChild(saveButton);
             }
         }
 
+        async function saveAdminChanges(noteId, viewed, comment) {
+            try {
+                await updateDoc(doc(db, "notes", noteId), {
+                    viewed: viewed,
+                    adminComment: comment
+                });
+                alert("تم حفظ التعديلات بنجاح!");
+            } catch (error) {
+                console.error("خطأ أثناء حفظ التعديلات:", error);
+                alert("حدث خطأ أثناء حفظ التعديلات.");
+            }
+        }
 
-// دالة حفظ اعدادات التعليق والمشاهدة 
-async function saveAdminChanges(noteId, viewed, comment) {
-    try {
-        await updateDoc(doc(db, "notes", noteId), {
-            viewed: viewed,
-            adminComment: comment
-        });
-        alert("تم حفظ التعديلات بنجاح!");
-    } catch (error) {
-        console.error("خطأ أثناء حفظ التعديلات:", error);
-        alert("حدث خطأ أثناء حفظ التعديلات.");
-    }
-}
-
-
-
-
-
-        // دالة لحذف الملاحظة
         window.deleteNote = async function (id) {
             if (confirm("هل أنت متأكد من حذف هذه الملاحظة؟")) {
                 try {
                     await deleteDoc(doc(db, "notes", id));
                     alert("تم حذف الملاحظة بنجاح!");
-                    loadNotes(); // تحديث الملاحظات بعد الحذف
+                    loadNotes();
                 } catch (error) {
                     console.error("خطأ أثناء الحذف:", error);
                     alert("حدث خطأ أثناء حذف الملاحظة.");
                 }
             }
         };
-		
-		//دالة فتح الصورة بحجمها الاصلي
-		function openImage(imageUrl) {
-    let newWindow = window.open();
-    newWindow.document.write(`<img src="${imageUrl}" style="width:100%; height:auto;">`);
-}
 
+        function openImage(imageUrl) {
+            let newWindow = window.open();
+            newWindow.document.write(`<img src="${imageUrl}" style="width:100%; height:auto;">`);
+        }
 
-
-
-        // إضافة أحداث للأزرار وتحميل الإعدادات عند بداية الصفحة
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('toggleAddNotes').addEventListener('click', () => {
                 toggleSetting('canAddNotes');
@@ -291,41 +275,63 @@ async function saveAdminChanges(noteId, viewed, comment) {
                 toggleSetting('allowImages');
             });
 
-            checkPassword(); // التحقق من كلمة المرور
-            loadSettings(); // تحميل الإعدادات
-            loadNotes(); // تحميل الملاحظات
+            const tabButtons = document.querySelectorAll('.tabs button');
+            const tabContents = document.querySelectorAll('.content > div');
+
+            tabButtons.forEach((button, index) => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.style.display = 'none');
+
+                    button.classList.add('active');
+                    tabContents[index].style.display = 'block';
+                });
+            });
+
+            tabButtons[0].click();
+
+            checkPassword();
+            loadSettings();
+            loadNotes();
         });
-		
     </script>
 </head>
 <body>
-    <div class="container">
-        <h1>لوحة تحكم الإدارة</h1>
-        
-        <!-- عرض حالة إضافة الملاحظات -->
-        <div class="status" id="addNotesStatus">
-            <strong>إضافة الملاحظات:</strong> <span id="addNotesText">غير فعال</span>
-        </div>
-
-        <!-- عرض حالة رفع الصور -->
-        <div class="status" id="imageUploadStatus">
-            <strong>رفع الصور:</strong> <span id="imageUploadText">غير فعال</span>
-        </div>
-
-        <button id="toggleAddNotes">تفعيل/تعطيل إضافة الملاحظات</button>
-        <button id="toggleImageUpload">تفعيل/تعطيل رفع الصور</button>
-
-        <!-- عرض جميع الملاحظات -->
-<div class="button-container">
-    <button onclick="window.location.href='notes.html'" class="view-all-button">عرض جميع المشاركات</button>
-</div>
-
-	    
-	    
-	    <div class="notes-container" id="notesContainer"></div>
+    <div class="tabs">
+        <button>التفاصيل العامة</button>
+        <button>المنشورات</button>
+        <button>الإعدادات</button>
     </div>
 
-    <!-- فيديو عند إدخال كلمة مرور خاطئة -->
+    <div class="content">
+        <!-- القسم الأول: التفاصيل العامة -->
+        <div>
+            <h2>التفاصيل العامة</h2>
+            <div class="status" id="addNotesStatus">
+                <strong>إضافة الملاحظات:</strong> <span id="addNotesText">غير فعال</span>
+            </div>
+            <div class="status" id="imageUploadStatus">
+                <strong>رفع الصور:</strong> <span id="imageUploadText">غير فعال</span>
+            </div>
+            <div id="generalDetails">
+                <!-- سيتم تحديث هذا القسم بالمعلومات العامة مثل عدد الملاحظات وأخر ملاحظة تم نشرها -->
+            </div>
+        </div>
+
+        <!-- القسم الثاني: المنشورات -->
+        <div style="display: none;">
+            <h2>المنشورات</h2>
+            <div class="notes-container" id="notesContainer"></div>
+        </div>
+
+        <!-- القسم الثالث: الإعدادات -->
+        <div style="display: none;">
+            <h2>الإعدادات</h2>
+            <button id="toggleAddNotes">تفعيل/تعطيل إضافة الملاحظات</button>
+            <button id="toggleImageUpload">تفعيل/تعطيل رفع الصور</button>
+        </div>
+    </div>
+
     <div id="videoContainer">
         <iframe id="errorVideo" src="https://www.youtube.com/embed/sQ22pm-xvrE" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
