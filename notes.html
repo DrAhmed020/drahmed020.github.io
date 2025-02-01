@@ -65,6 +65,30 @@
             font-weight: bold;
             color: #333;
         }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            margin-top: 20px;
+        }
+        .pagination button {
+            border: none;
+            background: #f8f8f8;
+            font-size: 18px;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s, box-shadow 0.3s;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .pagination button:hover {
+            background: #ddd;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .pagination span {
+            font-size: 18px;
+        }
     </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
@@ -87,117 +111,124 @@
             const notesContainer = document.getElementById("notesContainer");
             const prevBtn = document.getElementById("prevBtn");
             const nextBtn = document.getElementById("nextBtn");
+            const pageNumbers = document.getElementById("pageNumbers");
 
             const pageSize = 5;
-            let lastVisible = null;
-            let firstVisible = null;
+            let currentPage = 1;
+            let totalPages = 1;
 
-          async function reactToNote(noteId, reactionType) {
-    const noteRef = doc(db, "notes", noteId);
-    try {
-        const noteSnap = await getDoc(noteRef);
-        if (noteSnap.exists()) {
-            const noteData = noteSnap.data();
-            const updatedData = {
-                likes: noteData.likes || 0,
-                dislikes: noteData.dislikes || 0,
-                funnies: noteData.funnies || 0,
-            };
+            async function reactToNote(noteId, reactionType) {
+                const noteRef = doc(db, "notes", noteId);
+                try {
+                    const noteSnap = await getDoc(noteRef);
+                    if (noteSnap.exists()) {
+                        const noteData = noteSnap.data();
+                        const updatedData = {
+                            likes: noteData.likes || 0,
+                            dislikes: noteData.dislikes || 0,
+                            funnies: noteData.funnies || 0,
+                        };
 
-            // 🔹 الحصول على معرف المستخدم الفريد (يجب أن يكون دائمًا ثابتًا لكل مستخدم)
-            let userId = localStorage.getItem("userId");
-            if (!userId) {
-                userId = "user_" + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem("userId", userId);
+                        let userId = localStorage.getItem("userId");
+                        if (!userId) {
+                            userId = "user_" + Math.random().toString(36).substr(2, 9);
+                            localStorage.setItem("userId", userId);
+                        }
+
+                        const userReactions = noteData.userReactions || {};
+
+                        if (userReactions[userId] === reactionType) {
+                            updatedData[reactionType] -= 1;
+                            delete userReactions[userId];
+                        } else {
+                            if (userReactions[userId]) {
+                                updatedData[userReactions[userId]] -= 1;
+                            }
+                            updatedData[reactionType] += 1;
+                            userReactions[userId] = reactionType;
+                        }
+
+                        await updateDoc(noteRef, { ...updatedData, userReactions });
+                        loadNotes(currentPage);
+                    }
+                } catch (error) {
+                    console.error("خطأ أثناء تحديث التفاعل:", error);
+                    alert("حدث خطأ أثناء تسجيل التفاعل.");
+                }
             }
 
-            const userReactions = noteData.userReactions || {};
+            async function loadNotes(page) {
+                notesContainer.innerHTML = "جارٍ التحميل...";
+                try {
+                    let notesQuery = query(collection(db, "notes"), orderBy("timestamp", "desc"), limit(pageSize));
+                    const totalNotesSnapshot = await getDocs(collection(db, "notes"));
+                    totalPages = Math.ceil(totalNotesSnapshot.size / pageSize);
 
-            if (userReactions[userId] === reactionType) {
-                // إذا كان نفس التفاعل، يتم إلغاؤه
-                updatedData[reactionType] -= 1;
-                delete userReactions[userId];
-            } else {
-                // إذا كان هناك تفاعل سابق، يتم إزالته واستبداله بالجديد
-                if (userReactions[userId]) {
-                    updatedData[userReactions[userId]] -= 1;
-                }
-                updatedData[reactionType] += 1;
-                userReactions[userId] = reactionType;
-            }
+                    if (page > 1) {
+                        const previousPageQuery = query(notesQuery, limit((page - 1) * pageSize));
+                        const previousPageSnapshot = await getDocs(previousPageQuery);
+                        const lastVisible = previousPageSnapshot.docs[previousPageSnapshot.docs.length - 1];
+                        notesQuery = query(notesQuery, startAfter(lastVisible));
+                    }
 
-            await updateDoc(noteRef, { ...updatedData, userReactions });
-            loadNotes();
-        }
-    } catch (error) {
-        console.error("خطأ أثناء تحديث التفاعل:", error);
-        alert("حدث خطأ أثناء تسجيل التفاعل.");
-    }
-}
+                    const querySnapshot = await getDocs(notesQuery);
+                    if (!querySnapshot.empty) {
+                        notesContainer.innerHTML = "";
 
-async function loadNotes() {
-    notesContainer.innerHTML = "جارٍ التحميل...";
-    try {
-        let notesQuery = query(collection(db, "notes"), orderBy("timestamp", "desc"), limit(pageSize));
-        const querySnapshot = await getDocs(notesQuery);
+                        querySnapshot.forEach((doc) => {
+                            const note = doc.data();
+                            const noteItem = document.createElement("div");
+                            noteItem.classList.add("note-item");
 
-        if (!querySnapshot.empty) {
-            notesContainer.innerHTML = "";
+                            noteItem.innerHTML = `
+                                <div class="note-details">
+                                    <strong>${note.name}</strong> - ${note.grade}
+                                </div>
+                                <p>${note.note}</p>
+                                ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
+                            `;
 
-            querySnapshot.forEach((doc) => {
-                const note = doc.data();
-                const noteItem = document.createElement("div");
-                noteItem.classList.add("note-item");
+                            const reactionButtons = document.createElement("div");
+                            reactionButtons.classList.add("reaction-buttons");
 
-                noteItem.innerHTML = `
-                    <div class="note-details">
-                        <strong>${note.name}</strong> - ${note.grade}
-                    </div>
-                    <p>${note.note}</p>
-                    ${note.image ? `<img src="${note.image}" alt="صورة">` : ""}
-                `;
+                            let userId = localStorage.getItem("userId");
+                            if (!userId) {
+                                userId = "user_" + Math.random().toString(36).substr(2, 9);
+                                localStorage.setItem("userId", userId);
+                            }
 
-                const reactionButtons = document.createElement("div");
-                reactionButtons.classList.add("reaction-buttons");
+                            const userReactions = note.userReactions || {};
+                            const userReaction = userReactions[userId] || null;
 
-                let userId = localStorage.getItem("userId");
-                if (!userId) {
-                    userId = "user_" + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem("userId", userId);
-                }
+                            const likeButton = document.createElement("button");
+                            likeButton.innerHTML = `<span style='color: green;'>❤</span> (${note.likes || 0})`;
+                            likeButton.onclick = () => reactToNote(doc.id, "likes");
+                            if (userReaction === "likes") likeButton.classList.add("selected");
 
-                const userReactions = note.userReactions || {};
-                const userReaction = userReactions[userId] || null;
+                            const dislikeButton = document.createElement("button");
+                            dislikeButton.innerHTML = `<span style='color: red;'>👎</span> (${note.dislikes || 0})`;
+                            dislikeButton.onclick = () => reactToNote(doc.id, "dislikes");
+                            if (userReaction === "dislikes") dislikeButton.classList.add("selected");
 
-                const likeButton = document.createElement("button");
-                likeButton.innerHTML = `<span style='color: green;'>❤</span> (${note.likes || 0})`;
-                likeButton.onclick = () => reactToNote(doc.id, "likes");
-                if (userReaction === "likes") likeButton.classList.add("selected");
+                            const funnyButton = document.createElement("button");
+                            funnyButton.innerHTML = `<span style='color: orange;'>😂</span> (${note.funnies || 0})`;
+                            funnyButton.onclick = () => reactToNote(doc.id, "funnies");
+                            if (userReaction === "funnies") funnyButton.classList.add("selected");
 
-                const dislikeButton = document.createElement("button");
-                dislikeButton.innerHTML = `<span style='color: red;'>👎</span> (${note.dislikes || 0})`;
-                dislikeButton.onclick = () => reactToNote(doc.id, "dislikes");
-                if (userReaction === "dislikes") dislikeButton.classList.add("selected");
+                            reactionButtons.appendChild(likeButton);
+                            reactionButtons.appendChild(dislikeButton);
+                            reactionButtons.appendChild(funnyButton);
+                            noteItem.appendChild(reactionButtons);
 
-                const funnyButton = document.createElement("button");
-                funnyButton.innerHTML = `<span style='color: orange;'>😂</span> (${note.funnies || 0})`;
-                funnyButton.onclick = () => reactToNote(doc.id, "funnies");
-                if (userReaction === "funnies") funnyButton.classList.add("selected");
+                            const selectedReaction = document.createElement("p");
+                            selectedReaction.style.fontWeight = "bold";
+                            selectedReaction.style.color = "blue";
+                            selectedReaction.textContent = userReaction ? `لقد اخترت: ${userReaction}` : "لم تختر تفاعلًا بعد";
+                            noteItem.appendChild(selectedReaction);
 
-                reactionButtons.appendChild(likeButton);
-                reactionButtons.appendChild(dislikeButton);
-                reactionButtons.appendChild(funnyButton);
-                noteItem.appendChild(reactionButtons);
-
-                const selectedReaction = document.createElement("p");
-                selectedReaction.style.fontWeight = "bold";
-                selectedReaction.style.color = "blue";
-                selectedReaction.textContent = userReaction ? `لقد اخترت: ${userReaction}` : "لم تختر تفاعلًا بعد";
-                noteItem.appendChild(selectedReaction);
-                            
                             const adminInfo = document.createElement("div");
                             adminInfo.classList.add("admin-info");
-                            
+
                             if (note.viewed) {
                                 const viewedLabel = document.createElement("p");
                                 viewedLabel.style.color = "green";
@@ -211,10 +242,12 @@ async function loadNotes() {
                                 adminComment.textContent = "💬 تعليق الإدارة: " + note.adminComment;
                                 adminInfo.appendChild(adminComment);
                             }
-                            
+
                             noteItem.appendChild(adminInfo);
                             notesContainer.appendChild(noteItem);
                         });
+
+                        renderPagination();
                     } else {
                         notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
                     }
@@ -224,13 +257,40 @@ async function loadNotes() {
                 }
             }
 
-            prevBtn.addEventListener("click", () => loadNotes("prev"));
-            nextBtn.addEventListener("click", () => loadNotes("next"));
+            function renderPagination() {
+                pageNumbers.innerHTML = "";
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageNumber = document.createElement("span");
+                    pageNumber.textContent = i;
+                    if (i === currentPage) {
+                        pageNumber.style.fontWeight = "bold";
+                        pageNumber.style.textDecoration = "underline";
+                    }
+                    pageNumber.onclick = () => {
+                        currentPage = i;
+                        loadNotes(currentPage);
+                    };
+                    pageNumbers.appendChild(pageNumber);
+                }
+            }
 
-            loadNotes();
+            prevBtn.addEventListener("click", () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadNotes(currentPage);
+                }
+            });
+            nextBtn.addEventListener("click", () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadNotes(currentPage);
+                }
+            });
+
+            loadNotes(currentPage);
         });
     </script>
-<style>
+    <style>
         .add-post-button {
             display: block;
             width: fit-content;
@@ -254,8 +314,9 @@ async function loadNotes() {
         <a href="index.html" class="add-post-button">إضافة مشاركة</a>
         <div id="notesContainer" class="notes-container"></div>
         <div class="pagination">
-            <button id="prevBtn" >الصفحة السابقة</button>
-            <button id="nextBtn" >الصفحة التالية</button>
+            <button id="prevBtn">الصفحة السابقة</button>
+            <div id="pageNumbers"></div>
+            <button id="nextBtn">الصفحة التالية</button>
         </div>
     </div>
 </body>
