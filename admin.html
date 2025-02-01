@@ -298,14 +298,14 @@
 </head>
 <body>
     <div class="tabs">
-        <button>التفاصيل العامة</button>
-        <button>المنشورات</button>
-        <button>الإعدادات</button>
+        <button onclick="showSection(0)">التفاصيل العامة</button>
+        <button onclick="showSection(1)">المنشورات</button>
+        <button onclick="showSection(2)">الإعدادات</button>
     </div>
 
     <div class="content">
         <!-- القسم الأول: التفاصيل العامة -->
-        <div>
+        <div class="section active">
             <h2>التفاصيل العامة</h2>
             <div class="status" id="addNotesStatus">
                 <strong>إضافة الملاحظات:</strong> <span id="addNotesText">غير فعال</span>
@@ -319,13 +319,13 @@
         </div>
 
         <!-- القسم الثاني: المنشورات -->
-        <div style="display: none;">
+        <div class="section">
             <h2>المنشورات</h2>
             <div class="notes-container" id="notesContainer"></div>
         </div>
 
         <!-- القسم الثالث: الإعدادات -->
-        <div style="display: none;">
+        <div class="section">
             <h2>الإعدادات</h2>
             <button id="toggleAddNotes">تفعيل/تعطيل إضافة الملاحظات</button>
             <button id="toggleImageUpload">تفعيل/تعطيل رفع الصور</button>
@@ -335,5 +335,98 @@
     <div id="videoContainer">
         <iframe id="errorVideo" src="https://www.youtube.com/embed/sQ22pm-xvrE" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
     </div>
+
+    <style>
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tabs button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            background: #3498db;
+            color: white;
+            border-radius: 5px;
+            transition: 0.3s;
+        }
+        .tabs button:hover, .tabs button.active {
+            background: #2980b9;
+        }
+        .content .section {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        .content .section.active {
+            display: block;
+        }
+		
+		/* جعل التبويبات دائرية وثابتة في الأعلى */
+.tabs {
+    position: fixed; /* يجعلها ثابتة أثناء التمرير */
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    background: white;
+    padding: 10px;
+    border-radius: 50px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1000; /* التأكد من أنها تبقى فوق المحتوى */
+}
+
+/* تصميم التبويبات بشكل دائري */
+.tabs button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 25px;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.tabs button:hover {
+    background: #2980b9;
+    transform: scale(1.1);
+}
+
+/* إبقاء المساحة أعلى الصفحة حتى لا تغطي التبويبات المحتوى */
+.content {
+    margin-top: 60px; /* يضمن أن التبويبات لا تغطي المنشورات */
+}
+
+    </style>
+
+    <script>
+        function showSection(index) {
+            let sections = document.querySelectorAll(".content .section");
+            let buttons = document.querySelectorAll(".tabs button");
+            
+            sections.forEach((section, i) => {
+                section.classList.toggle("active", i === index);
+            });
+
+            buttons.forEach((btn, i) => {
+                btn.classList.toggle("active", i === index);
+            });
+        }
+
+        // عند تحميل الصفحة، عرض القسم الأول افتراضيًا
+        document.addEventListener("DOMContentLoaded", () => {
+            showSection(0);
+        });
+    </script>
 </body>
+
 </html>
