@@ -1,60 +1,121 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>لوحة تحكم الإدارة</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f8f8f8;
-            display: flex;
+            margin: 0;
+            padding: 0;
         }
-        .tabs {
-            width: 200px;
-            background: #f1f1f1;
-            padding: 10px;
-            border-right: 1px solid #ddd;
-        }
-        .tabs button {
-            display: block;
+
+        /* شاشة تسجيل الدخول */
+        #loginContainer {
+            display: none; /* ستظهر فقط إذا لم يكن هناك تسجيل دخول */
+            height: 100vh;
             width: 100%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #loginForm {
+            background: #f1f1f1;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        #loginForm input[type="password"] {
             padding: 10px;
+            width: 250px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            direction: ltr;
+        }
+        #loginForm button {
+            background: #3498db;
+            color: #fff;
+            padding: 10px 20px;
             border: none;
-            background: none;
-            text-align: left;
+            border-radius: 5px;
+            font-size: 16px;
             cursor: pointer;
             transition: background 0.3s;
         }
-        .tabs button:hover, .tabs button.active {
-            background: #ddd;
+        #loginForm button:hover {
+            background: #2980b9;
         }
-        .content {
-            flex-grow: 1;
-            padding: 20px;
+        #loginError {
+            color: red;
+            margin-top: 10px;
         }
-        .note-item img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 5px;
+
+        /* التبويبات */
+        .tabs {
+            position: fixed; /* يجعلها ثابتة أثناء التمرير */
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: white;
+            padding: 10px;
+            border-radius: 50px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000; /* التأكد من أنها تبقى فوق المحتوى */
+        }
+        .tabs button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
+            border-radius: 25px;
+            transition: background 0.3s, transform 0.2s;
         }
-        .note-item img:hover {
+        .tabs button:hover {
+            background: #2980b9;
             transform: scale(1.1);
         }
-        .container {
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        .tabs button.active {
+            background: #2980b9;
         }
+
+        /* محتوى الصفحة */
+        .content {
+            margin-top: 80px; /* يضمن أن التبويبات لا تغطي المحتوى */
+            display: none;    /* سيتم إظهاره فقط بعد تسجيل الدخول */
+        }
+        .section {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+            margin: 20px auto;
+            width: 90%;
+            max-width: 1200px;
+        }
+        .section.active {
+            display: block;
+        }
+
+        /* التنسيقات الداخلية */
         .status {
             margin: 20px 0;
             padding: 10px;
             border-radius: 5px;
+            display: inline-block;
+            min-width: 200px;
         }
         .enabled {
             background-color: #4CAF50;
@@ -76,6 +137,17 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             text-align: left;
         }
+        .note-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .note-item img:hover {
+            transform: scale(1.1);
+        }
         .note-item button {
             background-color: #f44336;
             color: white;
@@ -83,6 +155,7 @@
             border-radius: 5px;
             padding: 10px 20px;
             cursor: pointer;
+            margin-right: 10px;
         }
         .note-item button:hover {
             background-color: #d32f2f;
@@ -90,18 +163,21 @@
         #videoContainer {
             display: none;
             margin-top: 20px;
+            text-align: center;
         }
-        iframe {
+        #videoContainer iframe {
             width: 100%;
             max-width: 560px;
             height: 315px;
         }
     </style>
     
+    <!-- إضافة مكتبات Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
+        // إعدادات Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDEWffPfy-fljp32H8AjemraCau-f9JN-M",
             authDomain: "student-notes-app-3d196.firebaseapp.com",
@@ -112,41 +188,57 @@
             measurementId: "G-N63JWQNTZF"
         };
 
+        // تهيئة التطبيق ومرجع قاعدة البيانات
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // مرجع الوثيقة الخاصة بإعدادات المشرف
         const settingsDocRef = doc(db, "adminSettings", "settings");
 
-        function checkPassword() {
-            const correctPassword = "Ahmed*123";
-            const userPassword = prompt("يرجى إدخال كلمة المرور للوصول إلى لوحة التحكم:");
+        // كلمة المرور الصحيحة
+        const correctPassword = "Ahmed*123";
 
-            if (userPassword !== correctPassword) {
-                alert("كلمة المرور غير صحيحة!");
-                document.getElementById("videoContainer").style.display = "block";
-                document.querySelector(".container").style.display = "none";
-                const video = document.getElementById("errorVideo");
-                video.src += "?autoplay=1";
-            }
+        // هذه الدالة تتحقق من وجود جلسة دخول سابقة في localStorage
+        function checkSession() {
+            const isLoggedIn = localStorage.getItem("adminLoggedIn");
+            return isLoggedIn === "true";
         }
 
+        // دالة إظهار شاشة تسجيل الدخول
+        function showLoginScreen() {
+            document.getElementById("loginContainer").style.display = "flex";
+            document.querySelector(".content").style.display = "none";
+        }
+
+        // دالة إخفاء شاشة تسجيل الدخول وإظهار المحتوى
+        function showDashboard() {
+            document.getElementById("loginContainer").style.display = "none";
+            document.querySelector(".content").style.display = "block";
+        }
+
+        // تحميل الإعدادات من Firestore وتحديث الواجهة
         async function loadSettings() {
-            const settingsSnap = await getDoc(settingsDocRef);
-
-            if (settingsSnap.exists()) {
-                const settings = settingsSnap.data();
-                updateUI(settings);
-            } else {
-                console.error("لم يتم العثور على إعدادات صفحة الإدارة.");
+            try {
+                const settingsSnap = await getDoc(settingsDocRef);
+                if (settingsSnap.exists()) {
+                    const settings = settingsSnap.data();
+                    updateUI(settings);
+                } else {
+                    console.error("لم يتم العثور على إعدادات صفحة الإدارة.");
+                }
+            } catch (error) {
+                console.error("خطأ أثناء تحميل الإعدادات:", error);
             }
         }
 
+        // تحديث حالة الإعدادات في واجهة المستخدم
         function updateUI(settings) {
             const addNotesStatus = document.getElementById('addNotesStatus');
             const addNotesText = document.getElementById('addNotesText');
             const imageUploadStatus = document.getElementById('imageUploadStatus');
             const imageUploadText = document.getElementById('imageUploadText');
 
+            // canAddNotes
             if (settings.canAddNotes) {
                 addNotesStatus.classList.add('enabled');
                 addNotesStatus.classList.remove('disabled');
@@ -157,6 +249,7 @@
                 addNotesText.textContent = 'غير فعال';
             }
 
+            // allowImages
             if (settings.allowImages) {
                 imageUploadStatus.classList.add('enabled');
                 imageUploadStatus.classList.remove('disabled');
@@ -168,6 +261,7 @@
             }
         }
 
+        // تبديل قيم الإعدادات (تفعيل/تعطيل)
         async function toggleSetting(settingKey) {
             try {
                 const settingsSnap = await getDoc(settingsDocRef);
@@ -175,6 +269,7 @@
                     const currentSettings = settingsSnap.data();
                     const newValue = !currentSettings[settingKey];
                     await updateDoc(settingsDocRef, { [settingKey]: newValue });
+                    // إعادة تحميل الإعدادات لعرض القيمة الجديدة
                     loadSettings();
                 }
             } catch (error) {
@@ -183,6 +278,7 @@
             }
         }
 
+        // تحميل الملاحظات وعرضها
         async function loadNotes() {
             const notesContainer = document.getElementById("notesContainer");
             notesContainer.innerHTML = "جارٍ تحميل الملاحظات...";
@@ -191,8 +287,8 @@
                 notesContainer.innerHTML = "";
 
                 if (!querySnapshot.empty) {
-                    querySnapshot.forEach((doc) => {
-                        const note = doc.data();
+                    querySnapshot.forEach((docSnap) => {
+                        const note = docSnap.data();
                         const noteItem = document.createElement("div");
                         noteItem.classList.add("note-item");
                         noteItem.innerHTML = `
@@ -201,24 +297,44 @@
                                 <p><strong>الاسم:</strong> ${note.name}</p>
                                 <p><strong>المرحلة:</strong> ${note.grade}</p>
                                 <p><strong>الملاحظة:</strong> ${note.note}</p>
-                                ${note.image ? `<img src="${note.image}" onclick="openImage('${note.image}')">` : ""}
-                                <button onclick="deleteNote('${doc.id}')">حذف الملاحظة</button>
+                                ${
+                                  note.image
+                                    ? `<img src="${note.image}" onclick="openImage('${note.image}')">`
+                                    : ""
+                                }
+                                <button onclick="deleteNote('${docSnap.id}')">حذف الملاحظة</button>
                             </div>
                         `;
 
+                        // إنشاء خانة checkbox لوسم الملاحظة كمقروءة
                         const viewedCheckbox = document.createElement("input");
                         viewedCheckbox.type = "checkbox";
                         viewedCheckbox.checked = note.viewed || false;
-                        viewedCheckbox.dataset.id = doc.id;
+                        viewedCheckbox.style.marginRight = "10px";
+                        viewedCheckbox.dataset.id = docSnap.id;
 
+                        // إنشاء حقل نصي للتعليق الإداري
                         const commentBox = document.createElement("textarea");
                         commentBox.placeholder = "إضافة تعليق...";
-                        commentBox.dataset.id = doc.id;
+                        commentBox.dataset.id = docSnap.id;
                         commentBox.value = note.adminComment || "";
+                        commentBox.style.display = "block";
+                        commentBox.style.margin = "10px 0";
+                        commentBox.style.width = "100%";
+                        commentBox.style.height = "60px";
 
+                        // زر الحفظ
                         const saveButton = document.createElement("button");
                         saveButton.textContent = "حفظ التعديلات";
-                        saveButton.onclick = () => saveAdminChanges(doc.id, viewedCheckbox.checked, commentBox.value);
+                        saveButton.style.backgroundColor = "#3498db";
+                        saveButton.style.marginTop = "10px";
+                        saveButton.onclick = () => {
+                            saveAdminChanges(
+                                docSnap.id,
+                                viewedCheckbox.checked,
+                                commentBox.value
+                            );
+                        };
 
                         noteItem.appendChild(viewedCheckbox);
                         noteItem.appendChild(commentBox);
@@ -235,6 +351,7 @@
             }
         }
 
+        // حفظ تعديلات المشرف (وسم مقروء + تعليق)
         async function saveAdminChanges(noteId, viewed, comment) {
             try {
                 await updateDoc(doc(db, "notes", noteId), {
@@ -248,6 +365,7 @@
             }
         }
 
+        // حذف الملاحظة
         window.deleteNote = async function (id) {
             if (confirm("هل أنت متأكد من حذف هذه الملاحظة؟")) {
                 try {
@@ -255,55 +373,109 @@
                     alert("تم حذف الملاحظة بنجاح!");
                     loadNotes();
                 } catch (error) {
-                    console.error("خطأ أثناء الحذف:", error);
+                    console.error("خطأ أثناء حذف الملاحظة:", error);
                     alert("حدث خطأ أثناء حذف الملاحظة.");
                 }
             }
         };
 
-        function openImage(imageUrl) {
+        // عرض الصورة في نافذة جديدة
+        window.openImage = function(imageUrl) {
             let newWindow = window.open();
             newWindow.document.write(`<img src="${imageUrl}" style="width:100%; height:auto;">`);
+        };
+
+        // الدوال الخاصة بتبويبات الصفحة
+        function showSection(index) {
+            let sections = document.querySelectorAll(".content .section");
+            let buttons = document.querySelectorAll(".tabs button");
+            
+            sections.forEach((section, i) => {
+                section.classList.toggle("active", i === index);
+            });
+            buttons.forEach((btn, i) => {
+                btn.classList.toggle("active", i === index);
+            });
         }
 
+        // التحقق من كلمة المرور
+        function verifyPassword(passwordEntered) {
+            if (passwordEntered === correctPassword) {
+                // حفظ معلومة أنك مسجل دخول في localStorage
+                localStorage.setItem("adminLoggedIn", "true");
+                showDashboard();
+                loadSettings();
+                loadNotes();
+            } else {
+                // عرض الفيديو الخاص بالخطأ
+                document.getElementById("videoContainer").style.display = "block";
+                document.querySelector(".content").style.display = "none";
+                document.getElementById("errorVideo").src += "?autoplay=1";
+                document.getElementById("loginError").textContent = "كلمة المرور غير صحيحة!";
+            }
+        }
+
+        // عند تحميل الصفحة
         document.addEventListener("DOMContentLoaded", () => {
+            // فحص إن كان هناك جلسة سابقة
+            if (checkSession()) {
+                // إذا كان مسجل دخول مسبقًا
+                showDashboard();
+                loadSettings();
+                loadNotes();
+            } else {
+                showLoginScreen();
+            }
+
+            // معالجة إرسال نموذج تسجيل الدخول
+            const loginForm = document.getElementById("loginForm");
+            loginForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+                const passwordInput = document.getElementById("passwordInput");
+                verifyPassword(passwordInput.value.trim());
+                passwordInput.value = "";
+            });
+
+            // عند الضغط على التبويب الأول، نعرضه كافتراضي
+            showSection(0);
+
+            // ضبط أزرار التفعيل/التعطيل
             document.getElementById('toggleAddNotes').addEventListener('click', () => {
                 toggleSetting('canAddNotes');
             });
-
             document.getElementById('toggleImageUpload').addEventListener('click', () => {
                 toggleSetting('allowImages');
             });
-
-            const tabButtons = document.querySelectorAll('.tabs button');
-            const tabContents = document.querySelectorAll('.content > div');
-
-            tabButtons.forEach((button, index) => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.style.display = 'none');
-
-                    button.classList.add('active');
-                    tabContents[index].style.display = 'block';
-                });
-            });
-
-            tabButtons[0].click();
-
-            checkPassword();
-            loadSettings();
-            loadNotes();
         });
     </script>
 </head>
 <body>
-    <div class="tabs">
-        <button onclick="showSection(0)">التفاصيل العامة</button>
-        <button onclick="showSection(1)">المنشورات</button>
-        <button onclick="showSection(2)">الإعدادات</button>
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginContainer">
+        <form id="loginForm">
+            <h2>تسجيل الدخول للوحة التحكم</h2>
+            <input
+              type="password"
+              id="passwordInput"
+              placeholder="أدخل كلمة المرور"
+              required
+            />
+            <br/>
+            <button type="submit">دخول</button>
+            <div id="loginError"></div>
+        </form>
     </div>
 
+    <!-- محتوى لوحة التحكم -->
     <div class="content">
+        <!-- التبويبات -->
+        <div class="tabs">
+            <button onclick="showSection(0)">التفاصيل العامة</button>
+            <button onclick="showSection(1)">المنشورات</button>
+            <button onclick="showSection(2)">الإعدادات</button>
+        </div>
+
+        <!-- الأقسام -->
         <!-- القسم الأول: التفاصيل العامة -->
         <div class="section active">
             <h2>التفاصيل العامة</h2>
@@ -314,7 +486,7 @@
                 <strong>رفع الصور:</strong> <span id="imageUploadText">غير فعال</span>
             </div>
             <div id="generalDetails">
-                <!-- سيتم تحديث هذا القسم بالمعلومات العامة مثل عدد الملاحظات وأخر ملاحظة تم نشرها -->
+                <!-- يمكن إضافة معلومات إضافية هنا مثل عدد الملاحظات أو أي إحصائيات أخرى -->
             </div>
         </div>
 
@@ -330,103 +502,17 @@
             <button id="toggleAddNotes">تفعيل/تعطيل إضافة الملاحظات</button>
             <button id="toggleImageUpload">تفعيل/تعطيل رفع الصور</button>
         </div>
+
+        <!-- فيديو الخطأ في حال فشل تسجيل الدخول -->
+        <div id="videoContainer">
+            <iframe
+              id="errorVideo"
+              src="https://www.youtube.com/embed/sQ22pm-xvrE"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen
+            ></iframe>
+        </div>
     </div>
-
-    <div id="videoContainer">
-        <iframe id="errorVideo" src="https://www.youtube.com/embed/sQ22pm-xvrE" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
-
-    <style>
-        .tabs {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .tabs button {
-            padding: 10px 15px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            background: #3498db;
-            color: white;
-            border-radius: 5px;
-            transition: 0.3s;
-        }
-        .tabs button:hover, .tabs button.active {
-            background: #2980b9;
-        }
-        .content .section {
-            display: none;
-            text-align: center;
-            padding: 20px;
-            background: #f9f9f9;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-        }
-        .content .section.active {
-            display: block;
-        }
-		
-		/* جعل التبويبات دائرية وثابتة في الأعلى */
-.tabs {
-    position: fixed; /* يجعلها ثابتة أثناء التمرير */
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 15px;
-    background: white;
-    padding: 10px;
-    border-radius: 50px;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-    z-index: 1000; /* التأكد من أنها تبقى فوق المحتوى */
-}
-
-/* تصميم التبويبات بشكل دائري */
-.tabs button {
-    background: #3498db;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 25px;
-    transition: background 0.3s, transform 0.2s;
-}
-
-.tabs button:hover {
-    background: #2980b9;
-    transform: scale(1.1);
-}
-
-/* إبقاء المساحة أعلى الصفحة حتى لا تغطي التبويبات المحتوى */
-.content {
-    margin-top: 60px; /* يضمن أن التبويبات لا تغطي المنشورات */
-}
-
-    </style>
-
-    <script>
-        function showSection(index) {
-            let sections = document.querySelectorAll(".content .section");
-            let buttons = document.querySelectorAll(".tabs button");
-            
-            sections.forEach((section, i) => {
-                section.classList.toggle("active", i === index);
-            });
-
-            buttons.forEach((btn, i) => {
-                btn.classList.toggle("active", i === index);
-            });
-        }
-
-        // عند تحميل الصفحة، عرض القسم الأول افتراضيًا
-        document.addEventListener("DOMContentLoaded", () => {
-            showSection(0);
-        });
-    </script>
 </body>
-
 </html>
