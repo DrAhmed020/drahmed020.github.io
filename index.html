@@ -4,10 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مقترحات وشكاوى طلبة كلية الطب - جامعة الأنبار</title>
-    <link rel="stylesheet" href="styles.css">
+
+    <!-- يمكنك اختيار أي خطٍ آخر من Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            getDocs, 
+            query, 
+            orderBy, 
+            limit, 
+            doc, 
+            getDoc 
+        } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         // إعداد Firebase
         const firebaseConfig = {
@@ -152,47 +166,134 @@
             loadLatestNote();
         };
     </script>
+
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 600px;
-            margin: auto;
-        }
-        .note-box {
-            background: #ffffff;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .alert {
-            color: red;
-            font-weight: bold;
-            margin: 20px 0;
-            display: none;
-        }
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            color: #555;
-        }
-        .heart {
-            color: red;
-        }
+      /* استخدام خط Cairo */
+      body {
+        font-family: 'Cairo', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        margin: 0;
+        padding: 0;
+        text-align: center;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        padding: 20px;
+      }
+
+      /* تنسيق العناوين */
+      h5 {
+        font-size: 1.2rem;
+        color: #2c3e50;
+        margin-bottom: 5px;
+      }
+      h6 {
+        font-size: 1rem;
+        color: #555;
+        margin-bottom: 20px;
+      }
+
+      /* الزر الخاص بعرض جميع الملصقات */
+      a button {
+        font-size: 1rem;
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background-color: #3498db;
+        color: #fff;
+        transition: background-color 0.3s, transform 0.3s;
+      }
+      a button:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+      }
+
+      /* رسالة التنبيه عند تعطيل الإضافة */
+      .alert {
+        color: red;
+        font-weight: bold;
+        margin: 20px 0;
+        display: none;
+      }
+
+      /* تنسيق النموذج */
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 20px;
+      }
+      input[type="text"],
+      textarea,
+      input[type="file"] {
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 10px;
+        font-size: 1rem;
+        outline: none;
+        width: 100%;
+      }
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+
+      button[type="submit"] {
+        background-color: #27ae60;
+        color: #fff;
+        padding: 10px 20px;
+        font-size: 1rem;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.3s;
+      }
+      button[type="submit"]:hover {
+        background-color: #2ecc71;
+        transform: translateY(-2px);
+      }
+
+      /* صندوق أحدث ملاحظة */
+      .note-box {
+        background: #ffffff;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        text-align: left;
+      }
+      .note-box h3 {
+        margin-top: 0;
+        color: #e67e22;
+      }
+
+      /* تذييل الصفحة */
+      footer {
+        text-align: center;
+        margin-top: 30px;
+        font-size: 14px;
+        color: #555;
+      }
+      footer hr {
+        margin: 20px auto;
+        width: 80%;
+      }
+      .heart {
+        color: red;
+      }
     </style>
 </head>
 <body>
     <div class="container">
         <h5>مقترحات وشكاوى طلبة كلية الطب - جامعة الأنبار</h5>
-                <h6>برعاية الاستاذ الدكتور وليد نصار جفال -عميد كلية الطب تم أنشاء هذا التطبيق لمتابعة مقترحات وشكاوى ويوميات طلبة كلية الطب</h6>
+        <h6>برعاية الاستاذ الدكتور وليد نصار جفال -عميد كلية الطب تم أنشاء هذا التطبيق لمتابعة مقترحات وشكاوى ويوميات طلبة كلية الطب</h6>
 
         <!-- زر عرض الملاحظات -->
         <a href="notes.html" style="text-decoration: none;">
@@ -217,7 +318,8 @@
 
     <footer>
         <hr>
-        تم تصميم هذا السكربت بواسطة طالب الطب المهندس أحمد شاكر محمود الفهداوي - كلية الطب <span class="heart">❤</span>
+        تم تصميم هذا السكربت بواسطة طالب الطب المهندس أحمد شاكر محمود الفهداوي - كلية الطب 
+        <span class="heart">❤</span>
     </footer>
 </body>
 </html>
