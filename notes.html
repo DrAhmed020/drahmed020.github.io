@@ -1,480 +1,518 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مشاركات الطلبة</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>مشاركات الطلبة</title>
 
-    <!-- الخط: يمكنك استخدام أي خط تريده من Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <!-- خط Cairo من Google Fonts (يمكن تغييره) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet" />
 
-    <style>
-        /* ضبط الخط العام */
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Cairo', sans-serif;
-            background: linear-gradient(120deg, #c9f8ff, #fce2ff);
-        }
+  <style>
+    /* Reset بسيط */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Cairo', sans-serif;
+      background: linear-gradient(120deg, #c9f8ff, #fce2ff);
+    }
 
-        /* حاوية الصفحة الرئيسية */
-        .container {
-            max-width: 1000px;
-            margin: 40px auto; /* لتوسيط المحتوى */
-            background-color: #fff;
-            border-radius: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            padding: 20px;
-            text-align: center;
-        }
+    /* حاوية الصفحة الرئيسية */
+    .container {
+      max-width: 1000px;
+      margin: 40px auto; /* لتوسيط المحتوى */
+      background-color: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    .intro-text {
+      font-size: 1.1rem;
+      color: #555;
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
 
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
+    /* زر إضافة مشاركة */
+    .add-post-button {
+      display: inline-block;
+      background: #27ae60;
+      color: white;
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 1rem;
+      margin: 0 auto 20px;
+      transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+    }
+    .add-post-button:hover {
+      background: #2ecc71;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transform: translateY(-2px);
+    }
 
-        /* فقرة ترحيبية */
-        .intro-text {
-            font-size: 1.1rem;
-            color: #555;
-            margin-bottom: 20px;
-        }
+    /* حاوية الملاحظات - Grid Layout */
+    .notes-container {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
 
-        /* زر إضافة مشاركة */
-        .add-post-button {
-            display: inline-block;
-            background: #27ae60;
-            color: white;
-            text-decoration: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 1rem;
-            margin: 0 auto 20px;
-            transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
-        }
-        .add-post-button:hover {
-            background: #2ecc71;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            transform: translateY(-2px);
-        }
+    /* بطاقة الملاحظة */
+    .note-item {
+      background: #ffffff;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+      position: relative;
+    }
+    .note-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    .note-details {
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #34495e;
+    }
+    .note-item p {
+      color: #333;
+      line-height: 1.6;
+    }
+    /* الصورة */
+    .note-item img {
+      max-width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: block;
+      margin: 10px auto;
+    }
 
-        /* حاوية الملاحظات */
-        .notes-container {
-            margin-top: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
-        }
+    /* أزرار التفاعل */
+    .reaction-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .reaction-buttons button {
+      border: none;
+      background: #f8f8f8;
+      font-size: 18px;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
+      box-shadow: 0px 2px 4px rgba(0,0,0,0.2);
+    }
+    .reaction-buttons button:hover {
+      background: #ddd;
+      box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+      transform: scale(1.1);
+    }
+    .reaction-buttons .selected {
+      background-color: #ffecb3; /* تمييز الزر */
+    }
+    .selected-reaction {
+      font-weight: bold;
+      color: #2980b9;
+      margin-top: 8px;
+    }
 
-        /* عنصر الملاحظة */
-        .note-item {
-            background: #ffffff;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            transition: transform 0.3s, box-shadow 0.3s;
-            position: relative;
-        }
-        .note-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-        }
-        .note-details {
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #34495e;
-        }
-        .note-item p {
-            color: #333;
-            line-height: 1.6;
-        }
+    /* معلومات إدارية */
+    .admin-info {
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+    .admin-info p {
+      margin: 5px 0;
+    }
 
-        /* الصورة */
-        .note-item img {
-            max-width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 10px;
-            display: block;
-            margin: 10px auto;
-        }
+    /* الترقيم (Pagination) */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .pagination button {
+      border: none;
+      background: #f8f8f8;
+      font-size: 16px;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
+      box-shadow: 0px 2px 4px rgba(0,0,0,0.2);
+    }
+    .pagination button:hover {
+      background: #ddd;
+      box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
+      transform: scale(1.05);
+    }
+    .pagination span {
+      font-size: 16px;
+      cursor: pointer;
+      padding: 5px;
+      transition: color 0.2s, background 0.2s;
+      border-radius: 4px;
+    }
+    .pagination span:hover {
+      background: #eee;
+    }
+    .pagination .active-page {
+      font-weight: bold;
+      color: #e74c3c;
+      text-decoration: underline;
+    }
 
-        /* أزرار التفاعل */
-        .reaction-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .reaction-buttons button {
-            border: none;
-            background: #f8f8f8;
-            font-size: 18px;
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
-            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .reaction-buttons button:hover {
-            background: #ddd;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
-            transform: scale(1.1);
-        }
-        /* تمييز الزر في حال تفاعل المستخدم */
-        .reaction-buttons .selected {
-            background-color: #ffecb3; /* لون مختلف للزر المختار */
-        }
+    /* فوتر تشجيعي */
+    .footer {
+      margin-top: 30px;
+      font-size: 1rem;
+      color: #555;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
 
-        /* المعلومات الإدارية */
-        .admin-info {
-            margin-top: 15px;
-            font-weight: bold;
-            color: #333;
-        }
-        .admin-info p {
-            margin: 5px 0;
-        }
+    @media (max-width: 600px) {
+      .reaction-buttons button {
+        font-size: 14px;
+      }
+      .note-item img {
+        height: 150px;
+      }
+      .container {
+        margin: 20px auto;
+        padding: 10px;
+      }
+    }
+  </style>
 
-        /* فقرة التفاعل */
-        .selected-reaction {
-            font-weight: bold;
-            color: #2980b9;
-        }
+  <script type="module">
+    /***********************
+     *     Firebase Setup   *
+     ***********************/
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+    import { 
+      getFirestore, 
+      collection, 
+      getDocs, 
+      query, 
+      orderBy, 
+      limit, 
+      startAfter, 
+      doc, 
+      getDoc, 
+      updateDoc
+    } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        /* شريط الترقيم (الصفحات) */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        .pagination button {
-            border: none;
-            background: #f8f8f8;
-            font-size: 16px;
-            padding: 6px 12px;
-            cursor: pointer;
-            border-radius: 5px;
-            transition: background 0.3s, box-shadow 0.3s, transform 0.2s;
-            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        .pagination button:hover {
-            background: #ddd;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
-            transform: scale(1.05);
-        }
-        .pagination span {
-            font-size: 16px;
-            cursor: pointer;
-            padding: 5px;
-            transition: color 0.2s, background 0.2s;
-            border-radius: 4px;
-        }
-        .pagination span:hover {
-            background: #eee;
-        }
-        .pagination .active-page {
-            font-weight: bold;
-            color: #e74c3c;
-            text-decoration: underline;
-        }
+    // إعدادات Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDEWffPfy-fljp32H8AjemraCau-f9JN-M",
+      authDomain: "student-notes-app-3d196.firebaseapp.com",
+      projectId: "student-notes-app-3d196",
+      storageBucket: "student-notes-app-3d196.appspot.com",
+      messagingSenderId: "99837564904",
+      appId: "1:99837564904:web:6b880e2b80e439c8fcf65d",
+      measurementId: "G-N63JWQNTZF"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-        /* فوتر تشجيعي */
-        .footer {
-            margin-top: 30px;
-            font-size: 1rem;
-            color: #555;
-            border-top: 1px solid #ccc;
-            padding-top: 10px;
-        }
+    /***************************************
+     *     متغيرات وتهيئة الصفحة           *
+     ***************************************/
+    document.addEventListener("DOMContentLoaded", () => {
+      const notesContainer = document.getElementById("notesContainer");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const pageNumbers = document.getElementById("pageNumbers");
 
-        @media (max-width: 600px) {
-            .reaction-buttons button {
-                font-size: 14px;
-            }
-            .note-item img {
-                height: 150px;
-            }
-            .container {
-                margin: 20px auto;
-                padding: 10px;
-            }
-        }
-    </style>
+      // عدد الملاحظات في كل صفحة
+      const pageSize = 5;  
+      // الصفحة الحالية
+      let currentPage = 1; 
+      // إجمالي الصفحات
+      let totalPages = 1;  
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { 
-            getFirestore, 
-            collection, 
-            getDocs, 
-            query, 
-            orderBy, 
-            limit, 
-            startAfter, 
-            doc, 
-            getDoc, 
-            updateDoc 
-        } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+      /************************************************
+       *    دالة تسجيل التفاعل (Like, Dislike, Funny) *
+       ************************************************/
+      async function reactToNote(noteId, reactionType) {
+        const noteRef = doc(db, "notes", noteId);
+        try {
+          const noteSnap = await getDoc(noteRef);
+          if (noteSnap.exists()) {
+            const noteData = noteSnap.data();
+            const updatedData = {
+              likes: noteData.likes || 0,
+              dislikes: noteData.dislikes || 0,
+              funnies: noteData.funnies || 0,
+            };
 
-        /************* إعداد Firebase *************/
-        const firebaseConfig = {
-            apiKey: "AIzaSyDEWffPfy-fljp32H8AjemraCau-f9JN-M",
-            authDomain: "student-notes-app-3d196.firebaseapp.com",
-            projectId: "student-notes-app-3d196",
-            storageBucket: "student-notes-app-3d196.appspot.com",
-            messagingSenderId: "99837564904",
-            appId: "1:99837564904:web:6b880e2b80e439c8fcf65d",
-            measurementId: "G-N63JWQNTZF"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        /************* متغيرات *************/
-        document.addEventListener("DOMContentLoaded", () => {
-            const notesContainer = document.getElementById("notesContainer");
-            const prevBtn = document.getElementById("prevBtn");
-            const nextBtn = document.getElementById("nextBtn");
-            const pageNumbers = document.getElementById("pageNumbers");
-
-            const pageSize = 5;  // عدد الملاحظات في الصفحة
-            let currentPage = 1; // الصفحة الحالية
-            let totalPages = 1;  // إجمالي عدد الصفحات
-
-            /************* دالة التفاعل (لايك/ديسلايك/فكاهي) *************/
-            async function reactToNote(noteId, reactionType) {
-                const noteRef = doc(db, "notes", noteId);
-                try {
-                    const noteSnap = await getDoc(noteRef);
-                    if (noteSnap.exists()) {
-                        const noteData = noteSnap.data();
-                        const updatedData = {
-                            likes: noteData.likes || 0,
-                            dislikes: noteData.dislikes || 0,
-                            funnies: noteData.funnies || 0,
-                        };
-
-                        // تجهيز userId للمستخدم (لتفادي تكرار التفاعل)
-                        let userId = localStorage.getItem("userId");
-                        if (!userId) {
-                            userId = "user_" + Math.random().toString(36).substr(2, 9);
-                            localStorage.setItem("userId", userId);
-                        }
-
-                        // ردود أفعال المستخدمين السابقة
-                        const userReactions = noteData.userReactions || {};
-
-                        // إذا المستخدم اختار نفس التفاعل من قبل، نعكسه
-                        if (userReactions[userId] === reactionType) {
-                            updatedData[reactionType] -= 1;
-                            delete userReactions[userId];
-                        } else {
-                            // إذا كان لديه تفاعل سابق مختلف
-                            if (userReactions[userId]) {
-                                updatedData[userReactions[userId]] -= 1;
-                            }
-                            // ثم نضيف التفاعل الجديد
-                            updatedData[reactionType] += 1;
-                            userReactions[userId] = reactionType;
-                        }
-
-                        await updateDoc(noteRef, { 
-                            ...updatedData, 
-                            userReactions 
-                        });
-                        loadNotes(currentPage);
-                    }
-                } catch (error) {
-                    console.error("خطأ أثناء تحديث التفاعل:", error);
-                    alert("حدث خطأ أثناء تسجيل التفاعل.");
-                }
+            // تجهيز userId للمستخدم
+            let userId = localStorage.getItem("userId");
+            if (!userId) {
+              userId = "user_" + Math.random().toString(36).substr(2, 9);
+              localStorage.setItem("userId", userId);
             }
 
-            /************* تحميل الملاحظات *************/
-            async function loadNotes(page) {
-                notesContainer.innerHTML = "جارٍ التحميل...";
-                try {
-                    let notesQuery = query(
-                        collection(db, "notes"), 
-                        orderBy("timestamp", "desc"), 
-                        limit(pageSize)
-                    );
-                    // حساب إجمالي الملاحظات لمعرفة عدد الصفحات
-                    const totalNotesSnapshot = await getDocs(collection(db, "notes"));
-                    totalPages = Math.ceil(totalNotesSnapshot.size / pageSize);
+            // ردود الأفعال السابقة للمستخدمين
+            const userReactions = noteData.userReactions || {};
 
-                    // تخطي الملاحظات للصفحات السابقة
-                    if (page > 1) {
-                        const previousPageQuery = query(
-                            collection(db, "notes"), 
-                            orderBy("timestamp", "desc"), 
-                            limit((page - 1) * pageSize)
-                        );
-                        const previousPageSnapshot = await getDocs(previousPageQuery);
-                        const lastVisible = previousPageSnapshot.docs[previousPageSnapshot.docs.length - 1];
-                        notesQuery = query(notesQuery, startAfter(lastVisible));
-                    }
-
-                    // تنفيذ الاستعلام وجلب الملاحظات
-                    const querySnapshot = await getDocs(notesQuery);
-                    if (!querySnapshot.empty) {
-                        notesContainer.innerHTML = "";
-                        querySnapshot.forEach((docSnap) => {
-                            const note = docSnap.data();
-                            const noteItem = document.createElement("div");
-                            noteItem.classList.add("note-item");
-
-                            noteItem.innerHTML = `
-                                <div class="note-details">
-                                    <strong>${note.name}</strong> - ${note.grade}
-                                </div>
-                                <p>${note.note || ""}</p>
-                                ${
-                                    note.image 
-                                    ? `<img src="${note.image}" alt="صورة">` 
-                                    : ""
-                                }
-                            `;
-
-                            /************* أزرار التفاعل *************/
-                            const reactionButtons = document.createElement("div");
-                            reactionButtons.classList.add("reaction-buttons");
-
-                            let userId = localStorage.getItem("userId");
-                            if (!userId) {
-                                userId = "user_" + Math.random().toString(36).substr(2, 9);
-                                localStorage.setItem("userId", userId);
-                            }
-
-                            const userReactions = note.userReactions || {};
-                            const userReaction = userReactions[userId] || null;
-
-                            // زر الإعجاب
-                            const likeButton = document.createElement("button");
-                            likeButton.innerHTML = `<span style='color: green;'>❤</span> (${note.likes || 0})`;
-                            likeButton.onclick = () => reactToNote(docSnap.id, "likes");
-                            if (userReaction === "likes") likeButton.classList.add("selected");
-
-                            // زر عدم الإعجاب
-                            const dislikeButton = document.createElement("button");
-                            dislikeButton.innerHTML = `<span style='color: red;'>👎</span> (${note.dislikes || 0})`;
-                            dislikeButton.onclick = () => reactToNote(docSnap.id, "dislikes");
-                            if (userReaction === "dislikes") dislikeButton.classList.add("selected");
-
-                            // زر الفكاهة
-                            const funnyButton = document.createElement("button");
-                            funnyButton.innerHTML = `<span style='color: orange;'>😂</span> (${note.funnies || 0})`;
-                            funnyButton.onclick = () => reactToNote(docSnap.id, "funnies");
-                            if (userReaction === "funnies") funnyButton.classList.add("selected");
-
-                            // إضافة الأزرار إلى الحاوية
-                            reactionButtons.appendChild(likeButton);
-                            reactionButtons.appendChild(dislikeButton);
-                            reactionButtons.appendChild(funnyButton);
-
-                            // فقرة تظهر التفاعل المختار من قبل المستخدم
-                            const selectedReaction = document.createElement("p");
-                            selectedReaction.classList.add("selected-reaction");
-                            selectedReaction.textContent = userReaction 
-                                ? `لقد اخترت: ${userReaction}` 
-                                : "لم تختر تفاعلًا بعد";
-
-                            noteItem.appendChild(reactionButtons);
-                            noteItem.appendChild(selectedReaction);
-
-                            /************* معلومات إدارية (من لوحة التحكم) *************/
-                            const adminInfo = document.createElement("div");
-                            adminInfo.classList.add("admin-info");
-
-                            if (note.viewed) {
-                                const viewedLabel = document.createElement("p");
-                                viewedLabel.style.color = "green";
-                                viewedLabel.textContent = "✔ تم الاطلاع عليها";
-                                adminInfo.appendChild(viewedLabel);
-                            }
-
-                            if (note.adminComment) {
-                                const adminComment = document.createElement("p");
-                                adminComment.style.color = "blue";
-                                adminComment.textContent = "💬 تعليق الإدارة: " + note.adminComment;
-                                adminInfo.appendChild(adminComment);
-                            }
-
-                            noteItem.appendChild(adminInfo);
-                            notesContainer.appendChild(noteItem);
-                        });
-
-                        // عرض ترقيم الصفحات
-                        renderPagination();
-                    } else {
-                        notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
-                    }
-                } catch (error) {
-                    console.error("خطأ أثناء جلب الملاحظات:", error);
-                    notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
-                }
+            // إذا المستخدم اختار نفس التفاعل مسبقًا => إزالة
+            if (userReactions[userId] === reactionType) {
+              updatedData[reactionType] -= 1;
+              delete userReactions[userId];
+            } else {
+              // إذا عنده تفاعل سابق، ننقصه أولًا
+              if (userReactions[userId]) {
+                updatedData[userReactions[userId]] -= 1;
+              }
+              // ثم نضيف التفاعل الجديد
+              updatedData[reactionType] += 1;
+              userReactions[userId] = reactionType;
             }
 
-            /************* ترقيم الصفحات *************/
-            function renderPagination() {
-                pageNumbers.innerHTML = "";
-                for (let i = 1; i <= totalPages; i++) {
-                    const pageNumber = document.createElement("span");
-                    pageNumber.textContent = i;
-                    pageNumber.classList.add(i === currentPage ? "active-page" : "");
-                    pageNumber.onclick = () => {
-                        currentPage = i;
-                        loadNotes(currentPage);
-                    };
-                    pageNumbers.appendChild(pageNumber);
-                }
-            }
-
-            // أزرار الصفحة السابقة والتالية
-            prevBtn.addEventListener("click", () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadNotes(currentPage);
-                }
+            // تحديث الوثيقة في فايرستور
+            await updateDoc(noteRef, { 
+              ...updatedData,
+              userReactions
             });
-            nextBtn.addEventListener("click", () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    loadNotes(currentPage);
-                }
-            });
-
-            // تحميل أول صفحة
+            // إعادة تحميل الملاحظات لعرض التغييرات
             loadNotes(currentPage);
-        });
-    </script>
+          }
+        } catch (error) {
+          console.error("خطأ أثناء تحديث التفاعل:", error);
+          alert("حدث خطأ أثناء تسجيل التفاعل.");
+        }
+      }
+
+      /**********************************************
+       *          دالة تحميل الملاحظات             *
+       **********************************************/
+      async function loadNotes(page) {
+        notesContainer.innerHTML = "جارٍ التحميل...";
+        try {
+          // نجلب عدد كل الملاحظات لحساب إجمالي الصفحات
+          const totalNotesSnapshot = await getDocs(collection(db, "notes"));
+          const totalDocs = totalNotesSnapshot.size; 
+          totalPages = Math.ceil(totalDocs / pageSize);
+
+          // منع تجاوز الصفحة للحدود
+          if (page < 1) page = 1;
+          if (page > totalPages && totalPages > 0) page = totalPages;
+
+          // الاستعلام الأساسي (الصفحة الأولى)
+          let notesQuery = query(
+            collection(db, "notes"),
+            orderBy("timestamp", "desc"),  /* تأكّد من وجود هذا الحقل */
+            limit(pageSize)
+          );
+
+          // إذا كانت الصفحة > 1 => يجب تخطي (page-1)*pageSize من المستندات
+          if (page > 1) {
+            const skipCount = (page - 1) * pageSize;
+            // لا نتحرك إلا إذا العدد الكلي أكبر من skipCount
+            if (skipCount < totalDocs) {
+              const previousPageQuery = query(
+                collection(db, "notes"),
+                orderBy("timestamp", "desc"),
+                limit(skipCount)
+              );
+              const previousPageSnapshot = await getDocs(previousPageQuery);
+              if (!previousPageSnapshot.empty) {
+                const lastVisible = previousPageSnapshot.docs[previousPageSnapshot.docs.length - 1];
+                // نحدّث الاستعلام ليبدأ من آخر مستند في الصفحة السابقة
+                notesQuery = query(notesQuery, startAfter(lastVisible), limit(pageSize));
+              }
+            }
+          }
+
+          // نفّذ الاستعلام النهائي
+          const querySnapshot = await getDocs(notesQuery);
+          
+          // تفريغ الحاوية
+          notesContainer.innerHTML = "";
+          // إن لم يكن فارغًا
+          if (!querySnapshot.empty) {
+            querySnapshot.forEach((docSnap) => {
+              const note = docSnap.data();
+              const noteItem = document.createElement("div");
+              noteItem.classList.add("note-item");
+
+              noteItem.innerHTML = `
+                <div class="note-details">
+                  <strong>${note.name}</strong> - ${note.grade}
+                </div>
+                <p>${note.note || ""}</p>
+                ${
+                  note.image 
+                    ? `<img src="${note.image}" alt="صورة">` 
+                    : ""
+                }
+              `;
+
+              /************* أزرار التفاعل *************/
+              const reactionButtons = document.createElement("div");
+              reactionButtons.classList.add("reaction-buttons");
+
+              let userId = localStorage.getItem("userId");
+              if (!userId) {
+                userId = "user_" + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem("userId", userId);
+              }
+
+              const userReactions = note.userReactions || {};
+              const userReaction = userReactions[userId] || null;
+
+              // زر Like
+              const likeButton = document.createElement("button");
+              likeButton.innerHTML = `<span style='color: green;'>❤</span> (${note.likes || 0})`;
+              likeButton.onclick = () => reactToNote(docSnap.id, "likes");
+              if (userReaction === "likes") likeButton.classList.add("selected");
+
+              // زر Dislike
+              const dislikeButton = document.createElement("button");
+              dislikeButton.innerHTML = `<span style='color: red;'>👎</span> (${note.dislikes || 0})`;
+              dislikeButton.onclick = () => reactToNote(docSnap.id, "dislikes");
+              if (userReaction === "dislikes") dislikeButton.classList.add("selected");
+
+              // زر Funny
+              const funnyButton = document.createElement("button");
+              funnyButton.innerHTML = `<span style='color: orange;'>😂</span> (${note.funnies || 0})`;
+              funnyButton.onclick = () => reactToNote(docSnap.id, "funnies");
+              if (userReaction === "funnies") funnyButton.classList.add("selected");
+
+              reactionButtons.appendChild(likeButton);
+              reactionButtons.appendChild(dislikeButton);
+              reactionButtons.appendChild(funnyButton);
+
+              // فقرة تُظهر للمستخدم تفاعله الحالي
+              const selectedReaction = document.createElement("p");
+              selectedReaction.classList.add("selected-reaction");
+              selectedReaction.textContent = userReaction 
+                ? `لقد اخترت: ${userReaction}` 
+                : "لم تختر تفاعلًا بعد";
+
+              noteItem.appendChild(reactionButtons);
+              noteItem.appendChild(selectedReaction);
+
+              /************* معلومات إدارية *************/
+              const adminInfo = document.createElement("div");
+              adminInfo.classList.add("admin-info");
+
+              if (note.viewed) {
+                const viewedLabel = document.createElement("p");
+                viewedLabel.style.color = "green";
+                viewedLabel.textContent = "✔ تم الاطلاع عليها";
+                adminInfo.appendChild(viewedLabel);
+              }
+              if (note.adminComment) {
+                const adminComment = document.createElement("p");
+                adminComment.style.color = "blue";
+                adminComment.textContent = "💬 تعليق الإدارة: " + note.adminComment;
+                adminInfo.appendChild(adminComment);
+              }
+
+              noteItem.appendChild(adminInfo);
+              notesContainer.appendChild(noteItem);
+            });
+          } else {
+            // في حال كانت النتيجة فارغة
+            notesContainer.innerHTML = "لا توجد ملاحظات للعرض.";
+          }
+
+          // في النهاية، عرض أزرار الترقيم
+          renderPagination();
+        } catch (error) {
+          console.error("خطأ أثناء جلب الملاحظات:", error);
+          notesContainer.innerHTML = "حدث خطأ أثناء تحميل الملاحظات.";
+        }
+      }
+
+      /**********************************************
+       *       رسم الترقيم (صفحات)                  *
+       **********************************************/
+      function renderPagination() {
+        pageNumbers.innerHTML = "";
+
+        for (let i = 1; i <= totalPages; i++) {
+          const pageNumber = document.createElement("span");
+          pageNumber.textContent = i;
+          if (i === currentPage) {
+            pageNumber.classList.add("active-page");
+          }
+          pageNumber.onclick = () => {
+            currentPage = i;
+            loadNotes(currentPage);
+          };
+          pageNumbers.appendChild(pageNumber);
+        }
+      }
+
+      /**********************************************
+       *    أزرار (التالي) و(السابق)               *
+       **********************************************/
+      prevBtn.addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage--;
+          loadNotes(currentPage);
+        }
+      });
+      nextBtn.addEventListener("click", () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          loadNotes(currentPage);
+        }
+      });
+
+      // تحميل الصفحة الأولى عند الدخول
+      loadNotes(currentPage);
+    });
+  </script>
 </head>
 <body>
-    <div class="container">
-        <h1>مشاركات الطلبة</h1>
-        <p class="intro-text">
-            أهلاً بكم في صفحة مشاركات الطلبة! تصفّح الملاحظات والمنشورات المختلفة التي شاركها زملاؤكم، وتفاعلوا معها بالإعجاب أو التعليقات الفكاهية.
-            استمتعوا بمحتوى مفيد ومتنوع يعكس روح الإبداع والتميّز.
-        </p>
+  <div class="container">
+    <h1>مشاركات الطلبة</h1>
+    <p class="intro-text">
+      أهلاً بكم في صفحة مشاركات الطلبة! تصفّح الملاحظات والمنشورات المختلفة التي شاركها زملاؤكم، 
+      وتفاعلوا معها بالإعجاب أو التعليقات الفكاهية. استمتعوا بمحتوى مفيد ومتنوع يعكس روح الإبداع والتميّز.
+    </p>
 
-        <a href="index.html" class="add-post-button">إضافة مشاركة جديدة</a>
+    <a href="index.html" class="add-post-button">إضافة مشاركة جديدة</a>
 
-        <div id="notesContainer" class="notes-container"></div>
+    <!-- هنا تُعرض الملاحظات -->
+    <div id="notesContainer" class="notes-container"></div>
 
-        <div class="pagination">
-            <button id="prevBtn">الصفحة السابقة</button>
-            <div id="pageNumbers"></div>
-            <button id="nextBtn">الصفحة التالية</button>
-        </div>
-
-        <div class="footer">
-            <p>استمروا في الإبداع والمشاركة. مشاركاتكم تبعث الحماسة وتُنمي روح التعاون!</p>
-        </div>
+    <!-- الترقيم (انتقال الصفحات) -->
+    <div class="pagination">
+      <button id="prevBtn">الصفحة السابقة</button>
+      <div id="pageNumbers"></div>
+      <button id="nextBtn">الصفحة التالية</button>
     </div>
+
+    <!-- فوتر تشجيعي -->
+    <div class="footer">
+      <p>استمروا في الإبداع والمشاركة. مشاركاتكم تبعث الحماسة وتُنمي روح التعاون!</p>
+    </div>
+  </div>
 </body>
 </html>
