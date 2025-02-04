@@ -56,6 +56,26 @@
             margin-top: 10px;
         }
 
+        /* زر الذهاب لصفحة المنشورات بالأعلى */
+        .go-to-posts-btn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #9b59b6;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 15px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            z-index: 1100; /* أعلى من التبويبات */
+        }
+        .go-to-posts-btn:hover {
+            background: #8e44ad;
+            transform: scale(1.05);
+        }
+
         /* التبويبات */
         .tabs {
             position: fixed; /* ثابتة أثناء التمرير */
@@ -170,12 +190,50 @@
             max-width: 560px;
             height: 315px;
         }
+
+        /* سجل التعديلات */
+        .logs-container {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .log-item {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .log-item p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+
+        /* الحقوق في الأسفل */
+        footer {
+            text-align: center;
+            margin: 30px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .heart {
+            color: red;
+        }
     </style>
     
     <!-- سكربت ES Module لتحميل مكتبات Firebase وكتابة الكود -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs, 
+            deleteDoc, 
+            doc, 
+            getDoc, 
+            updateDoc, 
+            addDoc 
+        } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
         /***********************
          *     إعداد Firebase   *
@@ -192,11 +250,11 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        /***********************
-         *   متغيرات رئيسية     *
-         ***********************/
         // مرجع وثيقة إعدادات المشرف في Firestore
         const settingsDocRef = doc(db, "adminSettings", "settings");
+
+        // مجموعة سجلات التعديلات
+        const logsCollectionRef = collection(db, "adminLogs");
 
         // كلمة المرور الصحيحة لتسجيل الدخول
         const correctPassword = "Ahmed*123";
@@ -222,6 +280,18 @@
             document.querySelector(".content").style.display = "block";
         }
 
+        // دالة لتسجيل حدث في adminLogs
+        async function logAction(actionText) {
+            try {
+                await addDoc(logsCollectionRef, {
+                    action: actionText,
+                    timestamp: new Date().toLocaleString("ar") // أو يمكنك استخدام serverTimestamp()
+                });
+            } catch (error) {
+                console.error("خطأ أثناء تسجيل الحدث:", error);
+            }
+        }
+
         // التحقق من كلمة المرور
         function verifyPassword(passwordEntered) {
             if (passwordEntered === correctPassword) {
@@ -232,6 +302,8 @@
                 // تحميل الإعدادات والملاحظات
                 loadSettings();
                 loadNotes();
+                // تحميل السجل
+                loadLogs();
             } else {
                 // في حال كانت كلمة المرور خاطئة
                 document.getElementById("videoContainer").style.display = "block";
@@ -294,8 +366,10 @@
                     const currentSettings = settingsSnap.data();
                     const newValue = !currentSettings[settingKey];
                     await updateDoc(settingsDocRef, { [settingKey]: newValue });
-                    // إعادة تحميل الإعدادات لعرض القيمة الجديدة
+                    // إعادة تحميل الإعدادات
                     loadSettings();
+                    // سجل الحدث
+                    logAction(`تم تبديل الإعداد (${settingKey}) إلى ${newValue ? 'مفعل' : 'معطل'}.`);
                 }
             } catch (error) {
                 console.error("خطأ أثناء تحديث الإعداد:", error);
@@ -380,9 +454,41 @@
                     adminComment: comment
                 });
                 alert("تم حفظ التعديلات بنجاح!");
+                // سجل الحدث
+                logAction(`تم تعديل الملاحظة ${noteId} - مشاهدة: ${viewed ? 'نعم' : 'لا'}, تعليق: "${comment}"`);
             } catch (error) {
                 console.error("خطأ أثناء حفظ التعديلات:", error);
                 alert("حدث خطأ أثناء حفظ التعديلات.");
+            }
+        }
+
+        // تحميل سجل التعديلات
+        async function loadLogs() {
+            const logsContainer = document.getElementById("logsContainer");
+            logsContainer.innerHTML = "جارٍ تحميل سجل التعديلات...";
+            try {
+                // نجلب كل السجلات من adminLogs (يمكنك فرزها بأي شكل تريد)
+                const querySnapshot = await getDocs(logsCollectionRef);
+                if (!querySnapshot.empty) {
+                    let logsHtml = "";
+                    // سنعرضها دون ترتيب، يمكنك استخدام orderBy بالفايرستور إذا أردت
+                    // ولكن هنا سنجعل الأحدث في الأسفل بالترتيب كما هو
+                    querySnapshot.forEach((docSnap) => {
+                        const log = docSnap.data();
+                        logsHtml += `
+                            <div class="log-item">
+                                <p><strong>الوقت:</strong> ${log.timestamp || '---'}</p>
+                                <p><strong>الحدث:</strong> ${log.action}</p>
+                            </div>
+                        `;
+                    });
+                    logsContainer.innerHTML = logsHtml;
+                } else {
+                    logsContainer.innerHTML = "<p>لا توجد سجلات حتى الآن.</p>";
+                }
+            } catch (error) {
+                console.error("خطأ أثناء جلب السجلات:", error);
+                logsContainer.innerHTML = "حدث خطأ أثناء تحميل السجلات.";
             }
         }
 
@@ -402,6 +508,12 @@
             buttons.forEach((btn, i) => {
                 btn.classList.toggle("active", i === index);
             });
+
+            // إذا فتحنا تبويب "سجل التعديلات" (وهو رقم 3 في الفهرس، لأن هناك 4 تبويبات)
+            // تبويباتنا: 0 -> عامة، 1 -> منشورات، 2 -> إعدادات، 3 -> سجل
+            if (index === 3) {
+                loadLogs();
+            }
         };
 
         // حذف الملاحظة (مستدعاه من button داخل كل ملاحظة)
@@ -410,6 +522,8 @@
                 try {
                     await deleteDoc(doc(db, "notes", id));
                     alert("تم حذف الملاحظة بنجاح!");
+                    // سجل الحدث
+                    logAction(`تم حذف الملاحظة ${id}`);
                     loadNotes();
                 } catch (error) {
                     console.error("خطأ أثناء حذف الملاحظة:", error);
@@ -428,11 +542,19 @@
          *               الأحداث عند التحميل             *
          **************************************************/
         document.addEventListener("DOMContentLoaded", () => {
+            // زر الانتقال للمنشورات
+            const goToPostsBtn = document.getElementById("goToPostsBtn");
+            goToPostsBtn.addEventListener("click", () => {
+                // انتقل لصفحة notes.html
+                window.location.href = "notes.html";
+            });
+
             // إذا كان مسجل دخول مسبقًا
             if (checkSession()) {
                 showDashboard();
                 loadSettings();
                 loadNotes();
+                loadLogs(); 
             } else {
                 // إظهار شاشة تسجيل الدخول
                 showLoginScreen();
@@ -461,6 +583,9 @@
     </script>
 </head>
 <body>
+    <!-- زر الذهاب لصفحة المنشورات -->
+    <button id="goToPostsBtn" class="go-to-posts-btn">استعراض المنشورات</button>
+
     <!-- شاشة تسجيل الدخول -->
     <div id="loginContainer">
         <form id="loginForm">
@@ -484,6 +609,7 @@
             <button onclick="showSection(0)">التفاصيل العامة</button>
             <button onclick="showSection(1)">المنشورات</button>
             <button onclick="showSection(2)">الإعدادات</button>
+            <button onclick="showSection(3)">سجل التعديلات</button>
         </div>
 
         <!-- الأقسام -->
@@ -514,6 +640,12 @@
             <button id="toggleImageUpload">تفعيل/تعطيل رفع الصور</button>
         </div>
 
+        <!-- القسم الرابع: سجل التعديلات -->
+        <div class="section">
+            <h2>سجل التعديلات</h2>
+            <div class="logs-container" id="logsContainer"></div>
+        </div>
+
         <!-- فيديو الخطأ في حال فشل تسجيل الدخول -->
         <div id="videoContainer">
             <iframe
@@ -525,5 +657,11 @@
             ></iframe>
         </div>
     </div>
+
+    <!-- الحقوق في الأسفل -->
+    <footer>
+        تم تصميم هذا السكربت بواسطة طالب الطب المهندس أحمد شاكر محمود الفهداوي 
+        <span class="heart">❤</span>
+    </footer>
 </body>
 </html>
