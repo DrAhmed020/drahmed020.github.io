@@ -209,6 +209,24 @@
             line-height: 1.4;
         }
 
+        /* مراسلات الطلبة */
+        .messages-container {
+            margin-top: 30px;
+            text-align: left;
+        }
+        .message-item {
+            background: #fff;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .message-item p {
+            margin: 5px 0;
+            line-height: 1.4;
+        }
+
         /* الحقوق في الأسفل */
         footer {
             text-align: center;
@@ -255,6 +273,9 @@
 
         // مجموعة سجلات التعديلات
         const logsCollectionRef = collection(db, "adminLogs");
+
+        // مجموعة مراسلات الطلبة
+        const messagesCollectionRef = collection(db, "studentMessages");
 
         // كلمة المرور الصحيحة لتسجيل الدخول
         const correctPassword = "Ahmed*123";
@@ -304,6 +325,8 @@
                 loadNotes();
                 // تحميل السجل
                 loadLogs();
+                // تحميل مراسلات الطلبة
+                loadStudentMessages();
             } else {
                 // في حال كانت كلمة المرور خاطئة
                 document.getElementById("videoContainer").style.display = "block";
@@ -471,8 +494,6 @@
                 const querySnapshot = await getDocs(logsCollectionRef);
                 if (!querySnapshot.empty) {
                     let logsHtml = "";
-                    // سنعرضها دون ترتيب، يمكنك استخدام orderBy بالفايرستور إذا أردت
-                    // ولكن هنا سنجعل الأحدث في الأسفل بالترتيب كما هو
                     querySnapshot.forEach((docSnap) => {
                         const log = docSnap.data();
                         logsHtml += `
@@ -489,6 +510,37 @@
             } catch (error) {
                 console.error("خطأ أثناء جلب السجلات:", error);
                 logsContainer.innerHTML = "حدث خطأ أثناء تحميل السجلات.";
+            }
+        }
+
+        /***************************************************
+         *    تحميل مراسلات الطلبة (studentMessages)       *
+         ***************************************************/
+        async function loadStudentMessages() {
+            const messagesContainer = document.getElementById("messagesContainer");
+            messagesContainer.innerHTML = "جارٍ تحميل مراسلات الطلبة...";
+            try {
+                const querySnapshot = await getDocs(messagesCollectionRef);
+                if (!querySnapshot.empty) {
+                    let html = "";
+                    querySnapshot.forEach((docSnap) => {
+                        const msg = docSnap.data();
+                        html += `
+                            <div class="message-item">
+                                <p><strong>الاسم:</strong> ${msg.name}</p>
+                                <p><strong>المرحلة:</strong> ${msg.grade}</p>
+                                <p><strong>الرسالة:</strong> ${msg.message}</p>
+                                <p><em>${msg.timestamp || ""}</em></p>
+                            </div>
+                        `;
+                    });
+                    messagesContainer.innerHTML = html;
+                } else {
+                    messagesContainer.innerHTML = "<p>لا توجد مراسلات بعد.</p>";
+                }
+            } catch (error) {
+                console.error("خطأ أثناء جلب مراسلات الطلبة:", error);
+                messagesContainer.innerHTML = "حدث خطأ أثناء تحميل المراسلات.";
             }
         }
 
@@ -509,10 +561,12 @@
                 btn.classList.toggle("active", i === index);
             });
 
-            // إذا فتحنا تبويب "سجل التعديلات" (وهو رقم 3 في الفهرس، لأن هناك 4 تبويبات)
-            // تبويباتنا: 0 -> عامة، 1 -> منشورات، 2 -> إعدادات، 3 -> سجل
+            // الأقسام: 
+            // 0 -> عامة، 1 -> منشورات، 2 -> إعدادات، 3 -> سجل التعديلات، 4 -> مراسلات الطلبة
             if (index === 3) {
                 loadLogs();
+            } else if (index === 4) {
+                loadStudentMessages();
             }
         };
 
@@ -555,6 +609,7 @@
                 loadSettings();
                 loadNotes();
                 loadLogs(); 
+                loadStudentMessages();
             } else {
                 // إظهار شاشة تسجيل الدخول
                 showLoginScreen();
@@ -610,6 +665,7 @@
             <button onclick="showSection(1)">المنشورات</button>
             <button onclick="showSection(2)">الإعدادات</button>
             <button onclick="showSection(3)">سجل التعديلات</button>
+            <button onclick="showSection(4)">مراسلات الطلبة</button>
         </div>
 
         <!-- الأقسام -->
@@ -644,6 +700,12 @@
         <div class="section">
             <h2>سجل التعديلات</h2>
             <div class="logs-container" id="logsContainer"></div>
+        </div>
+
+        <!-- القسم الخامس: مراسلات الطلبة -->
+        <div class="section">
+            <h2>مراسلات الطلبة</h2>
+            <div class="messages-container" id="messagesContainer"></div>
         </div>
 
         <!-- فيديو الخطأ في حال فشل تسجيل الدخول -->
