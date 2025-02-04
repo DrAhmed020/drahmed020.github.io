@@ -36,7 +36,7 @@
             border-radius: 5px;
             margin-bottom: 15px;
             font-size: 16px;
-            direction: ltr;
+            direction: ltr; /* لجعل الكتابة في حقل المرور من اليسار إلى اليمين */
         }
         #loginForm button {
             background: #3498db;
@@ -58,7 +58,7 @@
 
         /* التبويبات */
         .tabs {
-            position: fixed; /* يجعلها ثابتة أثناء التمرير */
+            position: fixed; /* ثابتة أثناء التمرير */
             top: 0;
             left: 50%;
             transform: translateX(-50%);
@@ -68,7 +68,7 @@
             padding: 10px;
             border-radius: 50px;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 1000; /* التأكد من أنها تبقى فوق المحتوى */
+            z-index: 1000; /* للتأكد من بقائها فوق المحتوى */
         }
         .tabs button {
             background: #3498db;
@@ -91,8 +91,8 @@
 
         /* محتوى الصفحة */
         .content {
-            margin-top: 80px; /* يضمن أن التبويبات لا تغطي المحتوى */
-            display: none;    /* سيتم إظهاره فقط بعد تسجيل الدخول */
+            margin-top: 80px; /* مسافة أسفل التبويبات */
+            display: none;    /* سيظهر فقط بعد تسجيل الدخول */
         }
         .section {
             display: none;
@@ -109,7 +109,7 @@
             display: block;
         }
 
-        /* التنسيقات الداخلية */
+        /* التنسيقات الداخلية للأقسام */
         .status {
             margin: 20px 0;
             padding: 10px;
@@ -172,12 +172,14 @@
         }
     </style>
     
-    <!-- إضافة مكتبات Firebase -->
+    <!-- سكربت ES Module لتحميل مكتبات Firebase وكتابة الكود -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, getDocs, deleteDoc, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
 
-        // إعدادات Firebase
+        /***********************
+         *     إعداد Firebase   *
+         ***********************/
         const firebaseConfig = {
             apiKey: "AIzaSyDEWffPfy-fljp32H8AjemraCau-f9JN-M",
             authDomain: "student-notes-app-3d196.firebaseapp.com",
@@ -187,36 +189,59 @@
             appId: "1:99837564904:web:6b880e2b80e439c8fcf65d",
             measurementId: "G-N63JWQNTZF"
         };
-
-        // تهيئة التطبيق ومرجع قاعدة البيانات
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // مرجع الوثيقة الخاصة بإعدادات المشرف
+        /***********************
+         *   متغيرات رئيسية     *
+         ***********************/
+        // مرجع وثيقة إعدادات المشرف في Firestore
         const settingsDocRef = doc(db, "adminSettings", "settings");
 
-        // كلمة المرور الصحيحة
+        // كلمة المرور الصحيحة لتسجيل الدخول
         const correctPassword = "Ahmed*123";
 
-        // هذه الدالة تتحقق من وجود جلسة دخول سابقة في localStorage
+        /***********************
+         *   الدوال المساعدة   *
+         ***********************/
+
+        // التحقق من جلسة سابقة في localStorage
         function checkSession() {
-            const isLoggedIn = localStorage.getItem("adminLoggedIn");
-            return isLoggedIn === "true";
+            return localStorage.getItem("adminLoggedIn") === "true";
         }
 
-        // دالة إظهار شاشة تسجيل الدخول
+        // إظهار شاشة تسجيل الدخول
         function showLoginScreen() {
             document.getElementById("loginContainer").style.display = "flex";
             document.querySelector(".content").style.display = "none";
         }
 
-        // دالة إخفاء شاشة تسجيل الدخول وإظهار المحتوى
+        // إظهار اللوحة (بعد تسجيل الدخول)
         function showDashboard() {
             document.getElementById("loginContainer").style.display = "none";
             document.querySelector(".content").style.display = "block";
         }
 
-        // تحميل الإعدادات من Firestore وتحديث الواجهة
+        // التحقق من كلمة المرور
+        function verifyPassword(passwordEntered) {
+            if (passwordEntered === correctPassword) {
+                // حفظ معلومة تسجيل الدخول في localStorage
+                localStorage.setItem("adminLoggedIn", "true");
+                // إظهار لوحة التحكم
+                showDashboard();
+                // تحميل الإعدادات والملاحظات
+                loadSettings();
+                loadNotes();
+            } else {
+                // في حال كانت كلمة المرور خاطئة
+                document.getElementById("videoContainer").style.display = "block";
+                document.querySelector(".content").style.display = "none";
+                document.getElementById("errorVideo").src += "?autoplay=1";
+                document.getElementById("loginError").textContent = "كلمة المرور غير صحيحة!";
+            }
+        }
+
+        // تحميل الإعدادات من Firestore
         async function loadSettings() {
             try {
                 const settingsSnap = await getDoc(settingsDocRef);
@@ -231,14 +256,14 @@
             }
         }
 
-        // تحديث حالة الإعدادات في واجهة المستخدم
+        // تحديث واجهة المستخدم وفقًا للإعدادات
         function updateUI(settings) {
             const addNotesStatus = document.getElementById('addNotesStatus');
             const addNotesText = document.getElementById('addNotesText');
             const imageUploadStatus = document.getElementById('imageUploadStatus');
             const imageUploadText = document.getElementById('imageUploadText');
 
-            // canAddNotes
+            // إعداد (canAddNotes)
             if (settings.canAddNotes) {
                 addNotesStatus.classList.add('enabled');
                 addNotesStatus.classList.remove('disabled');
@@ -249,7 +274,7 @@
                 addNotesText.textContent = 'غير فعال';
             }
 
-            // allowImages
+            // إعداد (allowImages)
             if (settings.allowImages) {
                 imageUploadStatus.classList.add('enabled');
                 imageUploadStatus.classList.remove('disabled');
@@ -261,7 +286,7 @@
             }
         }
 
-        // تبديل قيم الإعدادات (تفعيل/تعطيل)
+        // تبديل (تفعيل/تعطيل) أي إعداد بتمرير اسمه (key)
         async function toggleSetting(settingKey) {
             try {
                 const settingsSnap = await getDoc(settingsDocRef);
@@ -278,7 +303,7 @@
             }
         }
 
-        // تحميل الملاحظات وعرضها
+        // تحميل الملاحظات
         async function loadNotes() {
             const notesContainer = document.getElementById("notesContainer");
             notesContainer.innerHTML = "جارٍ تحميل الملاحظات...";
@@ -298,22 +323,22 @@
                                 <p><strong>المرحلة:</strong> ${note.grade}</p>
                                 <p><strong>الملاحظة:</strong> ${note.note}</p>
                                 ${
-                                  note.image
-                                    ? `<img src="${note.image}" onclick="openImage('${note.image}')">`
-                                    : ""
+                                    note.image
+                                        ? `<img src="${note.image}" onclick="openImage('${note.image}')">`
+                                        : ""
                                 }
                                 <button onclick="deleteNote('${docSnap.id}')">حذف الملاحظة</button>
                             </div>
                         `;
 
-                        // إنشاء خانة checkbox لوسم الملاحظة كمقروءة
+                        // خانة checkbox لوضع علامة "تمت المشاهدة"
                         const viewedCheckbox = document.createElement("input");
                         viewedCheckbox.type = "checkbox";
                         viewedCheckbox.checked = note.viewed || false;
                         viewedCheckbox.style.marginRight = "10px";
                         viewedCheckbox.dataset.id = docSnap.id;
 
-                        // إنشاء حقل نصي للتعليق الإداري
+                        // حقل نصي للتعليق الإداري
                         const commentBox = document.createElement("textarea");
                         commentBox.placeholder = "إضافة تعليق...";
                         commentBox.dataset.id = docSnap.id;
@@ -329,11 +354,7 @@
                         saveButton.style.backgroundColor = "#3498db";
                         saveButton.style.marginTop = "10px";
                         saveButton.onclick = () => {
-                            saveAdminChanges(
-                                docSnap.id,
-                                viewedCheckbox.checked,
-                                commentBox.value
-                            );
+                            saveAdminChanges(docSnap.id, viewedCheckbox.checked, commentBox.value);
                         };
 
                         noteItem.appendChild(viewedCheckbox);
@@ -351,7 +372,7 @@
             }
         }
 
-        // حفظ تعديلات المشرف (وسم مقروء + تعليق)
+        // حفظ التعديلات (مشاهدة + تعليق)
         async function saveAdminChanges(noteId, viewed, comment) {
             try {
                 await updateDoc(doc(db, "notes", noteId), {
@@ -365,7 +386,25 @@
             }
         }
 
-        // حذف الملاحظة
+        /**************************************************
+         *   الدوال المستدعاه في العناصر (onclick)       *
+         *   سنعرّفها على window كي تكون في المجال العام *
+         **************************************************/
+        
+        // التبويبات
+        window.showSection = function(index) {
+            let sections = document.querySelectorAll(".content .section");
+            let buttons = document.querySelectorAll(".tabs button");
+            
+            sections.forEach((section, i) => {
+                section.classList.toggle("active", i === index);
+            });
+            buttons.forEach((btn, i) => {
+                btn.classList.toggle("active", i === index);
+            });
+        };
+
+        // حذف الملاحظة (مستدعاه من button داخل كل ملاحظة)
         window.deleteNote = async function (id) {
             if (confirm("هل أنت متأكد من حذف هذه الملاحظة؟")) {
                 try {
@@ -379,51 +418,23 @@
             }
         };
 
-        // عرض الصورة في نافذة جديدة
+        // فتح الصورة في نافذة جديدة (مستدعاه من صورة الملاحظة)
         window.openImage = function(imageUrl) {
             let newWindow = window.open();
             newWindow.document.write(`<img src="${imageUrl}" style="width:100%; height:auto;">`);
         };
 
-        // الدوال الخاصة بتبويبات الصفحة
-        function showSection(index) {
-            let sections = document.querySelectorAll(".content .section");
-            let buttons = document.querySelectorAll(".tabs button");
-            
-            sections.forEach((section, i) => {
-                section.classList.toggle("active", i === index);
-            });
-            buttons.forEach((btn, i) => {
-                btn.classList.toggle("active", i === index);
-            });
-        }
-
-        // التحقق من كلمة المرور
-        function verifyPassword(passwordEntered) {
-            if (passwordEntered === correctPassword) {
-                // حفظ معلومة أنك مسجل دخول في localStorage
-                localStorage.setItem("adminLoggedIn", "true");
-                showDashboard();
-                loadSettings();
-                loadNotes();
-            } else {
-                // عرض الفيديو الخاص بالخطأ
-                document.getElementById("videoContainer").style.display = "block";
-                document.querySelector(".content").style.display = "none";
-                document.getElementById("errorVideo").src += "?autoplay=1";
-                document.getElementById("loginError").textContent = "كلمة المرور غير صحيحة!";
-            }
-        }
-
-        // عند تحميل الصفحة
+        /**************************************************
+         *               الأحداث عند التحميل             *
+         **************************************************/
         document.addEventListener("DOMContentLoaded", () => {
-            // فحص إن كان هناك جلسة سابقة
+            // إذا كان مسجل دخول مسبقًا
             if (checkSession()) {
-                // إذا كان مسجل دخول مسبقًا
                 showDashboard();
                 loadSettings();
                 loadNotes();
             } else {
+                // إظهار شاشة تسجيل الدخول
                 showLoginScreen();
             }
 
@@ -436,16 +447,16 @@
                 passwordInput.value = "";
             });
 
-            // عند الضغط على التبويب الأول، نعرضه كافتراضي
-            showSection(0);
-
-            // ضبط أزرار التفعيل/التعطيل
+            // تفعيل أحداث الأزرار الخاصة بالإعدادات
             document.getElementById('toggleAddNotes').addEventListener('click', () => {
                 toggleSetting('canAddNotes');
             });
             document.getElementById('toggleImageUpload').addEventListener('click', () => {
                 toggleSetting('allowImages');
             });
+
+            // جعل القسم الأول ظاهرًا افتراضيًا
+            showSection(0);
         });
     </script>
 </head>
